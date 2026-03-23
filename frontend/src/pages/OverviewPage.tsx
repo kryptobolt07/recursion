@@ -3,10 +3,24 @@ import { niches, channelStats, formatNumber } from "@/data/mockData";
 import NicheBlockChart from "@/components/channel/NicheBlockChart";
 import HealthScore from "@/components/channel/HealthScore";
 import StatStrip from "@/components/shared/StatStrip";
-import { Eye, TrendingUp, ArrowRight } from "lucide-react";
+import { Eye, TrendingUp, ArrowRight, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
 
 export default function OverviewPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const { data: analytics, isLoading } = useQuery({
+    queryKey: ["channel_analytics"],
+    queryFn: async () => {
+      const res = await apiFetch("/channels/me/analytics");
+      if (!res.ok) throw new Error("Failed to fetch analytics");
+      return res.json();
+    },
+    enabled: !!user,
+  });
 
   const allTopVideos = niches
     .flatMap((n) => n.topVideos.map((v) => ({ ...v, nicheName: n.name, nicheColor: n.colorIndex })))
@@ -15,10 +29,39 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Channel Overview</h1>
-        <p className="text-sm text-muted-foreground mt-1">TechForge — @TechForge</p>
+      <div className="flex items-center gap-4">
+        {user?.thumbnail && (
+          <img src={user.thumbnail} alt="Channel" className="w-16 h-16 rounded-full" />
+        )}
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Channel Overview</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {user?.title || "Loading..."} — {user?.subscriberCount ? formatNumber(Number(user.subscriberCount)) : 0} subscribers
+          </p>
+        </div>
       </div>
+
+      {isLoading && (
+        <div className="flex items-center justify-center p-8 stat-card">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-3 text-muted-foreground">Loading YouTube Analytics...</span>
+        </div>
+      )}
+      {!isLoading && analytics && analytics.status === "success" && (
+        <div className="p-4 stat-card bg-primary/5 border border-primary/20">
+          <h3 className="text-sm font-semibold text-primary mb-2">Live Analytics Connected</h3>
+          <p className="text-xs text-muted-foreground">Successfully fetched demographics and performance data from YouTube Analytics API.</p>
+          <pre className="mt-2 p-2 bg-background rounded text-[10px] overflow-auto max-h-32 text-muted-foreground">
+            {JSON.stringify(analytics, null, 2)}
+          </pre>
+        </div>
+      )}
+      {!isLoading && analytics && analytics.status === "error" && (
+        <div className="p-4 stat-card bg-destructive/10 border border-destructive/20">
+          <h3 className="text-sm font-semibold text-destructive mb-2">Analytics Access Error</h3>
+          <p className="text-xs text-muted-foreground">{analytics.message}</p>
+        </div>
+      )}
 
       <StatStrip
         stats={[

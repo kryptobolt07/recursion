@@ -18,6 +18,8 @@ import VideoIdeasPage from "@/pages/VideoIdeasPage";
 import TitleOptimizerPage from "@/pages/TitleOptimizerPage";
 import ThumbnailsPage from "@/pages/ThumbnailsPage";
 import NotFound from "@/pages/NotFound";
+import LoginPage from "@/pages/LoginPage";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -28,21 +30,26 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<OverviewPage />} />
-            <Route path="/views" element={<ViewsBreakdownPage />} />
-            <Route path="/content-dna" element={<ContentDNAPage />} />
-            <Route path="/cadence" element={<CadencePage />} />
-            <Route path="/audience" element={<AudiencePage />} />
-            <Route path="/niche/:nicheId" element={<NicheDetailPage />} />
-            <Route path="/competitors" element={<CompetitorDiscoveryPage />} />
-            <Route path="/competitors/landscape" element={<LandscapePage />} />
-            <Route path="/competitors/:competitorId" element={<CompetitorDetailPage />} />
-            <Route path="/strategy" element={<StrategyReportPage />} />
-            <Route path="/strategy/ideas" element={<VideoIdeasPage />} />
-            <Route path="/strategy/titles" element={<TitleOptimizerPage />} />
-            <Route path="/strategy/thumbnails" element={<ThumbnailsPage />} />
+          <Route path="/login" element={<LoginPage />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<OverviewPage />} />
+              <Route path="/views" element={<ViewsBreakdownPage />} />
+              <Route path="/content-dna" element={<ContentDNAPage />} />
+              <Route path="/cadence" element={<CadencePage />} />
+              <Route path="/audience" element={<AudiencePage />} />
+              <Route path="/niche/:nicheId" element={<NicheDetailPage />} />
+              <Route path="/competitors" element={<CompetitorDiscoveryPage />} />
+              <Route path="/competitors/landscape" element={<LandscapePage />} />
+              <Route path="/competitors/:competitorId" element={<CompetitorDetailPage />} />
+              <Route path="/strategy" element={<StrategyReportPage />} />
+              <Route path="/strategy/ideas" element={<VideoIdeasPage />} />
+              <Route path="/strategy/titles" element={<TitleOptimizerPage />} />
+              <Route path="/strategy/thumbnails" element={<ThumbnailsPage />} />
+            </Route>
           </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

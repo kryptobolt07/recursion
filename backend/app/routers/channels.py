@@ -1,8 +1,23 @@
 """Channel analysis endpoints — global channel view with 5 tabs."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from app.services.youtube.analytics import fetch_channel_demographics, fetch_channel_performance
 
 router = APIRouter()
+
+@router.get("/me/analytics")
+async def get_my_analytics(request: Request):
+    """Fetch logged-in user's YouTube analytics (demographics and performance)."""
+    try:
+        demographics = await fetch_channel_demographics(request)
+        performance = await fetch_channel_performance(request, days_back=30)
+        return {
+            "status": "success",
+            "demographics": demographics,
+            "performance": performance
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 @router.post("/analyze")
