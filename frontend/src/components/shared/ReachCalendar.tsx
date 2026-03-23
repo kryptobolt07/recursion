@@ -112,8 +112,8 @@ export default function ReachCalendar({ data = [] }: { data?: ReachDataPoint[] }
         <div className="flex space-x-1.5">
           {weeks.map((week, weekIndex) => (
             <div key={weekIndex} className="flex flex-col space-y-1.5">
-              {week.map((day, dayIndex) => {
-                const isRealDay = calendarData.some(d => d.date.getTime() === day.date.getTime());
+            {week.map((day, dayIndex) => {
+                const isRealDay = calendarData.some(d => d.date.toDateString() === day.date.toDateString());
                 const isBlank = !isRealDay && day.level === 0;
                 
                 return (
@@ -123,11 +123,11 @@ export default function ReachCalendar({ data = [] }: { data?: ReachDataPoint[] }
                   >
                     {/* Tooltip */}
                     {isRealDay && (
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-[100] w-max px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-xl border border-border transform transition-all data-[state=open]:animate-in data-[state=closed]:animate-out">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-[100] w-max px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-xl border border-border">
                         <span className="font-bold text-sm tracking-tight">{day.reach > 0 ? `${day.reach.toLocaleString()} reach` : "No reach"}</span>
                         <span className="text-muted-foreground mt-0.5">{format(day.date, "MMM d, yyyy")}</span>
                         {/* Triangle pointing down */}
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-popover border-b border-r border-border rotate-45"></div>
+                        <div className="absolute -top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-popover border-b border-r border-border rotate-45 translate-y-[2.2rem]"></div>
                       </div>
                     )}
                   </div>

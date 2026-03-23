@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { demoCreatorChannelId } from "@/lib/demo";
 import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
+import { AnalysisLoader } from "@/components/shared/AnalysisLoader";
 
 interface CompetitorCard {
   id: string;
@@ -49,9 +50,18 @@ export default function CompetitorDiscoveryPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <AnalysisLoader
+        className="min-h-[52vh]"
+        eyebrow="Discovery Engine"
+        title="Scouring YouTube for matching competitors"
+        subtitle="The engine is querying public channels, checking keyword overlaps, comparing subscriber brackets, and scoring audience fit."
+        steps={[
+          "Executing TF-IDF topic queries",
+          "Filtering candidate channels by size",
+          "Loading engagement metadata & recent videos",
+          "Computing similarity & audience fit scores",
+        ]}
+      />
     );
   }
 

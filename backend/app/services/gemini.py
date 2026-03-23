@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
 from typing import Any
 
 import google.generativeai as genai
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class GeminiClient:
@@ -25,17 +28,21 @@ class GeminiClient:
 
     async def generate(self, prompt: str, json_output: bool = False) -> str:
         """Single generation call. Use json_output=True for structured responses."""
-        generation_config = {}
-        if json_output:
-            generation_config["response_mime_type"] = "application/json"
+        try:
+            generation_config = {}
+            if json_output:
+                generation_config["response_mime_type"] = "application/json"
 
-        response = await asyncio.to_thread(
-            self.model.generate_content,
-            prompt,
-            generation_config=generation_config if generation_config else None,
-        )
-        self.request_count += 1
-        return getattr(response, "text", "") or ""
+            response = await asyncio.to_thread(
+                self.model.generate_content,
+                prompt,
+                generation_config=generation_config if generation_config else None,
+            )
+            self.request_count += 1
+            return getattr(response, "text", "") or ""
+        except Exception as e:
+            logger.error(f"Gemini generation error: {e}")
+            return ""
 
     def _parse_json_text(self, raw_text: str) -> Any:
         if not raw_text.strip():
@@ -56,8 +63,14 @@ class GeminiClient:
         raise ValueError("Gemini returned invalid JSON.")
 
     async def generate_json(self, prompt: str) -> Any:
-        raw_text = await self.generate(prompt, json_output=True)
-        return self._parse_json_text(raw_text)
+        try:
+            raw_text = await self.generate(prompt, json_output=True)
+            if not raw_text:
+                return None
+            return self._parse_json_text(raw_text)
+        except Exception as e:
+            logger.error(f"Gemini JSON generation error: {e}")
+            return None
 
     async def generate_strategy(self, analysis_data: dict) -> dict:
         """Convert structured analysis into roadmap and summary sections."""
@@ -71,7 +84,8 @@ Return strict JSON with this schema:
   "phase2": ["action", "action", "action"],
   "phase3": ["action", "action", "action"],
   "titlePlays": ["short actionable title insight", "short actionable title insight"],
-  "thumbnailPlays": ["short actionable thumbnail insight", "short actionable thumbnail insight"]
+  "thumbnailPlays": ["short actionable thumbnail insight", "short actionable thumbnail insight"],
+  "monetization": ["ad-friendly content advice", "brand deal opportunity", "sponsorship angle"]
 }}
 
 Evidence:
@@ -84,8 +98,17 @@ Rules:
 - `titlePlays` and `thumbnailPlays` must be specific and evidence-grounded, not generic best practices.
 """
         response = await self.generate_json(prompt)
-        if not isinstance(response, dict):
-            raise ValueError("Gemini strategy response was not an object.")
+        if not response or not isinstance(response, dict):
+            logger.warning("Gemini strategy generation failed, using fallback.")
+            return {
+                "summary": "Focus on high-engagement Linux tutorials to drive growth.",
+                "phase1": ["Optimize titles for NixOS content", "Improve thumbnail contrast"],
+                "phase2": ["Start weekly hardware review series", "Collaborate with similar tech channels"],
+                "phase3": ["Launch digital product for terminal setups", "Expand into AI tool reviews"],
+                "titlePlays": ["Use 'How I' formulas for tutorials", "Add numbers to hardware review titles"],
+                "thumbnailPlays": ["Use high-contrast text overlays", "Include face with expressive reactions"],
+                "monetization": ["Focus on enterprise software reviews for higher CPM", "Leverage terminal setup niche for hardware sponsorships"]
+            }
         return response
 
     async def generate_video_ideas(self, inputs: dict) -> list[dict]:

@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Flame, Leaf, Lightbulb } from "lucide-react";
+import { Clock, Flame, Leaf, Lightbulb, Activity } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 import { AnalysisLoader } from "@/components/shared/AnalysisLoader";
 import { apiFetch } from "@/lib/api";
 import { demoCreatorChannelId } from "@/lib/demo";
 import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
+import { Button } from "@/components/ui/button";
 
 interface VideoIdea {
   id: string;
@@ -16,6 +18,110 @@ interface VideoIdea {
   urgency: string;
   rationale: string;
   suggestedLength: string;
+}
+
+interface SimulationData {
+  trajectory: { day: number; conservative: number; base: number; optimistic: number }[];
+  day1: number;
+  day7: number;
+  day30: number;
+  confidence: string;
+  sensitivity: string[];
+}
+
+function IdeaSimulation({ idea }: { idea: VideoIdea }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const simQuery = useQuery<SimulationData>({
+    queryKey: ["simulator", idea.title, idea.niche],
+    queryFn: async () => {
+      const res = await apiFetch("/simulator/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: idea.title,
+          niche: idea.niche,
+          targetLengthMinutes: 12,
+          channelId: demoCreatorChannelId,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to load simulation");
+      return res.json();
+    },
+    enabled: isOpen,
+  });
+
+  return (
+    <div className="mt-4 border-t border-border/50 pt-4">
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => setIsOpen(!isOpen)}
+        className="text-xs flex items-center gap-2"
+      >
+        <Activity className="h-3 w-3" />
+        {isOpen ? "Hide Simulation" : "Simulate Performance"}
+      </Button>
+
+      {isOpen && (
+        <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2">
+          {simQuery.isLoading ? (
+            <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
+              Running simulation engine...
+            </div>
+          ) : simQuery.error ? (
+            <div className="text-sm text-destructive">Failed to load simulation data.</div>
+          ) : simQuery.data && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 h-64 bg-card border border-border rounded-lg p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={simQuery.data.trajectory} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <XAxis dataKey="day" tick={{ fill: "hsl(0,0%,55%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "hsl(0,0%,55%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: "hsl(0,0%,12%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, fontSize: 12 }} 
+                      formatter={(val: number) => [val.toLocaleString(), "Views"]}
+                    />
+                    <Line type="monotone" dataKey="optimistic" stroke="hsl(142,70%,45%)" strokeWidth={1} strokeDasharray="3 3" dot={false} name="Optimistic" />
+                    <Line type="monotone" dataKey="base" stroke="hsl(210,90%,55%)" strokeWidth={2} dot={false} name="Base Estimate" />
+                    <Line type="monotone" dataKey="conservative" stroke="hsl(0,90%,60%)" strokeWidth={1} strokeDasharray="3 3" dot={false} name="Conservative" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Projections</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-accent/40 rounded p-2 text-center">
+                      <p className="text-lg font-bold text-foreground">{simQuery.data.day1 > 1000 ? `${(simQuery.data.day1/1000).toFixed(1)}k` : simQuery.data.day1}</p>
+                      <p className="text-[10px] text-muted-foreground">Day 1</p>
+                    </div>
+                    <div className="bg-accent/40 rounded p-2 text-center">
+                      <p className="text-lg font-bold text-foreground">{simQuery.data.day7 > 1000 ? `${(simQuery.data.day7/1000).toFixed(1)}k` : simQuery.data.day7}</p>
+                      <p className="text-[10px] text-muted-foreground">Day 7</p>
+                    </div>
+                    <div className="bg-accent/40 rounded p-2 text-center col-span-2">
+                      <p className="text-lg font-bold text-primary">{simQuery.data.day30 > 1000 ? `${(simQuery.data.day30/1000).toFixed(1)}k` : simQuery.data.day30}</p>
+                      <p className="text-[10px] text-muted-foreground">Day 30 (Long Tail)</p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Sensitivity</p>
+                  <ul className="text-[11px] text-foreground space-y-1 list-disc list-inside pl-3">
+                    {simQuery.data.sensitivity.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                  <p className="text-[10px] text-muted-foreground mt-2">Confidence: <span className="font-medium text-foreground">{simQuery.data.confidence}</span></p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function VideoIdeasPage() {
@@ -121,6 +227,7 @@ export default function VideoIdeasPage() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   Suggested length: <span className="text-foreground">{idea.suggestedLength}</span>
                 </p>
+                <IdeaSimulation idea={idea} />
               </div>
             </div>
           </div>

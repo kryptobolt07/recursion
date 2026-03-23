@@ -1,5 +1,6 @@
 """Competitor discovery and detail endpoints."""
 
+import logging
 from fastapi import APIRouter, HTTPException
 
 from app.services.analysis_cache import analysis_cache
@@ -9,14 +10,19 @@ from app.services.thumbnail_analysis import ThumbnailAnalysisService
 router = APIRouter()
 service = PublicCompetitorAnalysisService()
 thumbnail_service = ThumbnailAnalysisService()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/discover/{channel_id}")
 async def discover_competitors(channel_id: str, force: bool = False):
     """§2.1 Auto-discover competitors — search, filter, rank by similarity."""
+    logger.info(f"Received request to discover competitors for channel: {channel_id}, force={force}")
     try:
-        return await service.discover(channel_id, force=force)
+        result = await service.discover(channel_id, force=force)
+        logger.info(f"Discovery successful for channel: {channel_id}")
+        return result
     except Exception as exc:
+        logger.error(f"Error during competitor discovery for {channel_id}: {exc}", exc_info=True)
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 

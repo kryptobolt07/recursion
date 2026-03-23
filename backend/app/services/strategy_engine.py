@@ -821,6 +821,11 @@ class StrategyEngineService:
                 "Avoid crowded layouts. One focal subject, one contrast pair, and a short overlay beat multi-element compositions for this market.",
                 f"If the title is framed as {top_formula.lower()}, the thumbnail should visualize the contrast or payoff, not restate the whole headline.",
             ],
+            "monetization": [
+                f"Leverage {top_niche} tutorials to drive higher CPM from enterprise tools.",
+                f"Focus on {top_ask.lower()} to attract specialized brand sponsorships.",
+                "Incorporate affiliate links for hardware reviewed in your top performing niche.",
+            ],
         }
 
     def _strategy_section_is_generic(self, rows: list[str], generic_phrases: set[str]) -> bool:
@@ -845,10 +850,10 @@ class StrategyEngineService:
         if isinstance(llm_copy, dict) and not self._strategy_summary_is_generic(str(llm_copy.get("summary", ""))):
             merged["summary"] = str(llm_copy["summary"]).strip()
 
-        for key in ("phase1", "phase2", "phase3", "titlePlays", "thumbnailPlays"):
+        for key in ("phase1", "phase2", "phase3", "titlePlays", "thumbnailPlays", "monetization"):
             candidate = llm_copy.get(key) if isinstance(llm_copy, dict) else None
             normalized_rows = [sentence_case(str(row)) for row in (candidate or []) if str(row).strip()]
-            if not self._strategy_section_is_generic(normalized_rows, GENERIC_STRATEGY_PHRASES):
+            if key == "monetization" or not self._strategy_section_is_generic(normalized_rows, GENERIC_STRATEGY_PHRASES):
                 merged[key] = normalized_rows[:3]
 
         return merged
@@ -921,6 +926,7 @@ class StrategyEngineService:
             "supportingSignals": {
                 "titlePlays": merged_copy["titlePlays"][:3],
                 "thumbnailPlays": merged_copy["thumbnailPlays"][:3],
+                "monetization": merged_copy.get("monetization", []),
                 "viewerAsks": viewer_asks[:5],
                 "marketLeaders": market_leaders,
             },

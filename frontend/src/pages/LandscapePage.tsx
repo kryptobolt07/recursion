@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { demoCreatorChannelId } from "@/lib/demo";
 import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
+import { AnalysisLoader } from "@/components/shared/AnalysisLoader";
 
 interface CompetitorCard {
   id: string;
@@ -56,9 +57,18 @@ export default function LandscapePage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <AnalysisLoader
+        className="min-h-[52vh]"
+        eyebrow="Landscape Analysis"
+        title="Mapping the competitive landscape"
+        subtitle="The engine is plotting your channel against discovered competitors to find market positioning gaps."
+        steps={[
+          "Gathering competitor subscriber counts",
+          "Calculating channel-wide engagement rates",
+          "Plotting subscriber-vs-engagement quadrants",
+          "Identifying 'Sleeping Giants' and 'Rising Stars'",
+        ]}
+      />
     );
   }
 

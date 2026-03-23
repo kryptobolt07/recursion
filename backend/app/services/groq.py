@@ -98,7 +98,8 @@ Return strict JSON with this schema:
   "phase2": ["action", "action", "action"],
   "phase3": ["action", "action", "action"],
   "titlePlays": ["short actionable title insight", "short actionable title insight"],
-  "thumbnailPlays": ["short actionable thumbnail insight", "short actionable thumbnail insight"]
+  "thumbnailPlays": ["short actionable thumbnail insight", "short actionable thumbnail insight"],
+  "monetization": ["ad-friendly content advice", "brand deal opportunity", "sponsorship angle"]
 }}
 
 Evidence:

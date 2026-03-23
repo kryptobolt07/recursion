@@ -1,4 +1,5 @@
 import { niches } from "@/data/mockData";
+import ReachCalendar from "@/components/shared/ReachCalendar";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export default function CadencePage() {
@@ -49,6 +50,8 @@ export default function CadencePage() {
           <p className="stat-label">Longest Gap</p>
         </div>
       </div>
+
+      <ReachCalendar />
 
       {/* Stacked monthly chart */}
       <div className="stat-card">

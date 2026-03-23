@@ -60,7 +60,7 @@ class YouTubeDataAPI:
             )
             try:
                 response = request.execute()
-            except HttpError:
+            except Exception:
                 response = {"items": []}
             self.quota_used += QUOTA_COSTS["channels.list"]
             items.extend(response.get("items", []))
@@ -122,7 +122,7 @@ class YouTubeDataAPI:
             )
             try:
                 response = request.execute()
-            except HttpError:
+            except Exception:
                 break
             self.quota_used += QUOTA_COSTS["playlistItems.list"]
 
@@ -154,7 +154,7 @@ class YouTubeDataAPI:
             )
             try:
                 response = request.execute()
-            except HttpError:
+            except Exception:
                 response = {"items": []}
             self.quota_used += QUOTA_COSTS["videos.list"]
 
@@ -205,7 +205,7 @@ class YouTubeDataAPI:
             )
             try:
                 response = request.execute()
-            except HttpError:
+            except Exception:
                 break
             self.quota_used += QUOTA_COSTS["commentThreads.list"]
 
@@ -241,7 +241,9 @@ class YouTubeDataAPI:
         )
         try:
             response = request.execute()
-        except HttpError:
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"YouTube API call failed: {e}")
             response = {"items": []}
 
         self.quota_used += QUOTA_COSTS["search.list"]
@@ -274,7 +276,9 @@ class YouTubeDataAPI:
         )
         try:
             response = request.execute()
-        except HttpError:
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"YouTube API call failed: {e}")
             response = {"items": []}
 
         self.quota_used += QUOTA_COSTS["search.list"]

@@ -85,6 +85,7 @@ export interface AudienceData {
   praises: string[];
   complaints: string[];
   ageBreakdown: { band: string; percentage: number }[];
+  genderBreakdown: { gender: string; percentage: number }[];
   countryBreakdown: { country: string; percentage: number }[];
   languageDistribution: { language: string; percentage: number }[];
 }
@@ -222,6 +223,9 @@ export const niches: Niche[] = [
         { band: "25–34", percentage: 38 }, { band: "35–44", percentage: 14 },
         { band: "45–54", percentage: 4 }, { band: "55+", percentage: 2 },
       ],
+      genderBreakdown: [
+        { gender: "Male", percentage: 88 }, { gender: "Female", percentage: 10 }, { gender: "Other", percentage: 2 }
+      ],
       countryBreakdown: [
         { country: "United States", percentage: 28 }, { country: "India", percentage: 18 },
         { country: "Germany", percentage: 12 }, { country: "United Kingdom", percentage: 9 },
@@ -292,6 +296,9 @@ export const niches: Niche[] = [
         { band: "25–34", percentage: 35 }, { band: "35–44", percentage: 22 },
         { band: "45–54", percentage: 7 }, { band: "55+", percentage: 3 },
       ],
+      genderBreakdown: [
+        { gender: "Male", percentage: 92 }, { gender: "Female", percentage: 7 }, { gender: "Other", percentage: 1 }
+      ],
       countryBreakdown: [
         { country: "United States", percentage: 34 }, { country: "India", percentage: 14 },
         { country: "United Kingdom", percentage: 11 }, { country: "Germany", percentage: 9 },
@@ -360,6 +367,9 @@ export const niches: Niche[] = [
         { band: "13–17", percentage: 4 }, { band: "18–24", percentage: 32 },
         { band: "25–34", percentage: 42 }, { band: "35–44", percentage: 16 },
         { band: "45–54", percentage: 4 }, { band: "55+", percentage: 2 },
+      ],
+      genderBreakdown: [
+        { gender: "Male", percentage: 89 }, { gender: "Female", percentage: 9 }, { gender: "Other", percentage: 2 }
       ],
       countryBreakdown: [
         { country: "United States", percentage: 30 }, { country: "India", percentage: 22 },
@@ -430,6 +440,9 @@ export const niches: Niche[] = [
         { band: "25–34", percentage: 36 }, { band: "35–44", percentage: 20 },
         { band: "45–54", percentage: 8 }, { band: "55+", percentage: 4 },
       ],
+      genderBreakdown: [
+        { gender: "Male", percentage: 85 }, { gender: "Female", percentage: 12 }, { gender: "Other", percentage: 3 }
+      ],
       countryBreakdown: [
         { country: "United States", percentage: 32 }, { country: "Germany", percentage: 16 },
         { country: "United Kingdom", percentage: 10 }, { country: "Canada", percentage: 8 },
@@ -497,6 +510,9 @@ export const niches: Niche[] = [
         { band: "13–17", percentage: 6 }, { band: "18–24", percentage: 30 },
         { band: "25–34", percentage: 38 }, { band: "35–44", percentage: 18 },
         { band: "45–54", percentage: 6 }, { band: "55+", percentage: 2 },
+      ],
+      genderBreakdown: [
+        { gender: "Male", percentage: 86 }, { gender: "Female", percentage: 11 }, { gender: "Other", percentage: 3 }
       ],
       countryBreakdown: [
         { country: "United States", percentage: 30 }, { country: "India", percentage: 20 },

@@ -35,6 +35,7 @@ interface StrategyReport {
   supportingSignals: {
     titlePlays: string[];
     thumbnailPlays: string[];
+    monetization: string[];
     viewerAsks: string[];
     marketLeaders: { name: string; topNiche: string; avgViews: number; audienceFitScore: number }[];
   };
@@ -236,7 +237,7 @@ export default function StrategyReportPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 xl:grid-cols-4">
         <div className="stat-card">
           <h3 className="section-header">Title Plays</h3>
           {report.supportingSignals.titlePlays.length ? (
@@ -279,6 +280,21 @@ export default function StrategyReportPage() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No recurring audience demand phrases were extracted from public comments.</p>
+          )}
+        </div>
+
+        <div className="stat-card">
+          <h3 className="section-header">Advertising Strategy</h3>
+          {report.supportingSignals.monetization?.length ? (
+            <div className="space-y-2">
+              {report.supportingSignals.monetization.map((item) => (
+                <div key={item} className="rounded-lg bg-green-500/10 px-3 py-3 text-sm text-green-700 dark:text-green-400">
+                  {item}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No monetization strategy could be derived.</p>
           )}
         </div>
       </div>

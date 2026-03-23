@@ -10,6 +10,7 @@ import {
   Search,
   Target,
   TrendingUp,
+  Trophy,
   Wand2,
 } from "lucide-react";
 
@@ -38,6 +39,7 @@ const navSections = [
       { to: "/app/content-dna", icon: Target, label: "Content DNA" },
       { to: "/app/cadence", icon: Calendar, label: "Cadence" },
       { to: "/app/audience", icon: Activity, label: "Audience" },
+      { to: "/app/ranking", icon: Trophy, label: "Video Ranking" },
     ],
   },
   {

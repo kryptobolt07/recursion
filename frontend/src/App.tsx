@@ -17,11 +17,21 @@ import StrategyReportPage from "@/pages/StrategyReportPage";
 import VideoIdeasPage from "@/pages/VideoIdeasPage";
 import TitleOptimizerPage from "@/pages/TitleOptimizerPage";
 import ThumbnailsPage from "@/pages/ThumbnailsPage";
+import VideoRankingPage from "@/pages/VideoRankingPage";
 import NotFound from "@/pages/NotFound";
 import LoginPage from "@/pages/LoginPage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 30 * 60 * 1000, // 30 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const LegacyAppRedirect = () => {
   const location = useLocation();
@@ -72,6 +82,7 @@ const App = () => (
               <Route path="strategy/ideas" element={<VideoIdeasPage />} />
               <Route path="strategy/titles" element={<TitleOptimizerPage />} />
               <Route path="strategy/thumbnails" element={<ThumbnailsPage />} />
+              <Route path="ranking" element={<VideoRankingPage />} />
             </Route>
           </Route>
 

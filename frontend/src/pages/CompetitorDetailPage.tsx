@@ -10,6 +10,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { apiFetch } from "@/lib/api";
 import { findCreatorNiche, findCreatorVideoMatch } from "@/lib/creatorDerived";
 import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
+import { AnalysisLoader } from "@/components/shared/AnalysisLoader";
 
 const tabs = ["Overview", "Content Similarity", "Similar Videos", "Thumbnail Analysis", "Viral Patterns", "Engagement"] as const;
 
@@ -108,9 +109,18 @@ export default function CompetitorDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <AnalysisLoader
+        className="min-h-[52vh]"
+        eyebrow="Competitor X-Ray"
+        title="Extracting competitor blueprint"
+        subtitle="The engine is tearing down their video history, clustering their formats, and scoring them against your audience signals."
+        steps={[
+          "Fetching full public video history",
+          "Running cluster analysis on their catalog",
+          "Sampling comments for audience sentiment",
+          "Building similarity and viral pattern maps",
+        ]}
+      />
     );
   }
 

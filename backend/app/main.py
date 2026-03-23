@@ -13,6 +13,7 @@ from app.routers import (
     channels,
     competitors,
     niches,
+    ranking,
     simulator,
     strategy,
     thumbnails,
@@ -61,6 +62,7 @@ app.include_router(strategy.router, prefix="/strategy", tags=["Strategy"])
 app.include_router(titles.router, prefix="/titles", tags=["Titles"])
 app.include_router(thumbnails.router, prefix="/thumbnails", tags=["Thumbnails"])
 app.include_router(simulator.router, prefix="/simulator", tags=["Simulator"])
+app.include_router(ranking.router, prefix="/ranking", tags=["Ranking"])
 
 
 @app.get("/health")

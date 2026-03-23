@@ -1,7 +1,7 @@
 import { niches } from "@/data/mockData";
 import SentimentBar from "@/components/shared/SentimentBar";
 import TagCloud from "@/components/shared/TagCloud";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
 
 export default function AudiencePage() {
   // Global aggregation
@@ -16,6 +16,14 @@ export default function AudiencePage() {
     band,
     percentage: Math.round(niches.reduce((s, n) => s + (n.audience.ageBreakdown.find((a) => a.band === band)?.percentage || 0) * n.uploadShare, 0) / 100),
   }));
+
+  const genders = ["Male", "Female", "Other"];
+  const globalGender = genders.map((gender) => ({
+    name: gender,
+    value: Math.round(niches.reduce((s, n) => s + (n.audience.genderBreakdown.find((g) => g.gender === gender)?.percentage || 0) * n.uploadShare, 0) / 100),
+  })).filter(g => g.value > 0);
+
+  const genderColors = ["hsl(210,90%,55%)", "hsl(340,80%,60%)", "hsl(0,0%,50%)"];
 
   const allCountries = new Map<string, number>();
   niches.forEach((n) => {
@@ -46,7 +54,7 @@ export default function AudiencePage() {
         <p className="text-sm text-muted-foreground mt-3">Your audience is largely positive with strong enthusiasm for technical depth. Privacy content generates more polarized reactions.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Age breakdown */}
         <div className="stat-card">
           <h3 className="section-header">Age Breakdown</h3>
@@ -64,7 +72,39 @@ export default function AudiencePage() {
           </ResponsiveContainer>
         </div>
 
+        {/* Gender breakdown */}
+        <div className="stat-card">
+          <h3 className="section-header">Gender Breakdown</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={globalGender}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {globalGender.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={genderColors[index % genderColors.length]} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ backgroundColor: "hsl(0,0%,12%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, color: "hsl(0,0%,95%)" }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex justify-center gap-4 mt-2">
+            {globalGender.map((entry, index) => (
+              <div key={entry.name} className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: genderColors[index % genderColors.length] }}></div>
+                {entry.name} ({entry.value}%)
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Country breakdown */}
+
         <div className="stat-card">
           <h3 className="section-header">Country Breakdown</h3>
           <div className="space-y-2">
