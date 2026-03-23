@@ -62,7 +62,7 @@ const navSections = [
 
 export default function AppSidebar() {
   const location = useLocation();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile, toggleSidebar } = useSidebar();
 
   const handleNavigate = () => {
     if (isMobile) {
@@ -72,19 +72,20 @@ export default function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" variant="inset">
-      <SidebarHeader className="gap-3 px-3 py-3">
+      <SidebarHeader className="gap-3 p-3 group-data-[collapsible=icon]:p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              className="h-auto min-h-14 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/40 px-3 py-3 hover:bg-sidebar-accent/70"
+              onClick={toggleSidebar}
+              className="h-auto min-h-14 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/40 p-3 hover:bg-sidebar-accent/70 group-data-[collapsible=icon]:min-h-10 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-none group-data-[collapsible=icon]:bg-transparent"
               tooltip="Competitor Spy"
             >
               <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm group-data-[collapsible=icon]:hidden">
                 <Eye className="size-4" />
               </div>
-              <div className="hidden size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm group-data-[collapsible=icon]:flex">
-                <BarChart3 className="size-4" />
+              <div className="hidden size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm group-data-[collapsible=icon]:flex">
+                <Eye className="size-4" />
               </div>
               <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate text-sm font-semibold text-sidebar-accent-foreground">Competitor Spy</span>
@@ -105,10 +106,10 @@ export default function AppSidebar() {
 
       <SidebarSeparator />
 
-      <SidebarContent className="px-2 py-3">
+      <SidebarContent className="px-2 py-3 group-data-[collapsible=icon]:px-1">
         {navSections.map((section) => (
           <SidebarGroup key={section.label} className="px-1 py-0">
-            <SidebarGroupLabel className="px-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-sidebar-foreground/55">
+            <SidebarGroupLabel className="px-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-sidebar-foreground/55 group-data-[collapsible=icon]:hidden">
               {section.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -138,10 +139,10 @@ export default function AppSidebar() {
 
       <SidebarSeparator />
 
-      <SidebarFooter className="px-3 py-3">
-        <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/35 p-3">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sidebar text-sidebar-accent-foreground shadow-sm">
+      <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2">
+        <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/35 p-3 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:border-none group-data-[collapsible=icon]:bg-transparent">
+          <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sidebar border border-sidebar-border/50 text-sidebar-accent-foreground shadow-sm group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:rounded-lg">
               <BarChart3 className="size-4" />
             </div>
             <div className="min-w-0 group-data-[collapsible=icon]:hidden">

@@ -76,7 +76,7 @@ export default function LandscapePage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Competitive Landscape</h1>
-        <p className="text-sm text-muted-foreground mt-1">Subscriber count vs engagement rate positioning</p>
+        <p className="text-sm text-muted-foreground mt-1">Discover your market positioning based on subscriber count vs. engagement rate.</p>
       </div>
 
       {error && (
@@ -85,14 +85,34 @@ export default function LandscapePage() {
         </div>
       )}
 
+      {/* Explanation Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="stat-card bg-primary/5 border border-primary/10 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-1">Dominant</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">High subs, high engagement. The market leaders. Study their content formulas closely.</p>
+        </div>
+        <div className="stat-card bg-accent/30 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-1">Rising Stars</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">Low subs, high engagement. Fast growers. Watch them for emerging trends and formats.</p>
+        </div>
+        <div className="stat-card bg-accent/30 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-1">Sleeping Giants</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">High subs, low engagement. Large legacy audiences but declining momentum.</p>
+        </div>
+        <div className="stat-card bg-accent/30 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-1">Fringe</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">Low subs, low engagement. Struggling to find product-market fit or highly niched.</p>
+        </div>
+      </div>
+
       <div className="stat-card">
         <h3 className="section-header">Landscape Map</h3>
-        <div className="relative">
-          {/* Quadrant labels */}
-          <div className="absolute top-2 left-8 text-[10px] text-muted-foreground/50 uppercase tracking-wide">Rising Stars</div>
-          <div className="absolute top-2 right-4 text-[10px] text-muted-foreground/50 uppercase tracking-wide">Dominant</div>
-          <div className="absolute bottom-12 left-8 text-[10px] text-muted-foreground/50 uppercase tracking-wide">Fringe</div>
-          <div className="absolute bottom-12 right-4 text-[10px] text-muted-foreground/50 uppercase tracking-wide">Sleeping Giants</div>
+        <div className="relative mt-4">
+          {/* Quadrant labels with better visibility */}
+          <div className="absolute top-4 left-10 rounded bg-background/80 px-2 py-1 text-[10px] font-semibold text-foreground uppercase tracking-wider border border-border shadow-sm backdrop-blur-sm z-10">Rising Stars</div>
+          <div className="absolute top-4 right-6 rounded bg-background/80 px-2 py-1 text-[10px] font-semibold text-foreground uppercase tracking-wider border border-border shadow-sm backdrop-blur-sm z-10">Dominant</div>
+          <div className="absolute bottom-12 left-10 rounded bg-background/80 px-2 py-1 text-[10px] font-semibold text-foreground uppercase tracking-wider border border-border shadow-sm backdrop-blur-sm z-10">Fringe</div>
+          <div className="absolute bottom-12 right-6 rounded bg-background/80 px-2 py-1 text-[10px] font-semibold text-foreground uppercase tracking-wider border border-border shadow-sm backdrop-blur-sm z-10">Sleeping Giants</div>
 
           <ResponsiveContainer width="100%" height={400}>
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>

@@ -275,39 +275,64 @@ export default function CompetitorDetailPage() {
       {/* Similar Videos */}
       {activeTab === "Similar Videos" && (
         <div className="space-y-6 animate-fade-in">
-          <div className="stat-card">
+          <div className="stat-card overflow-x-auto">
             <h3 className="section-header">Their Top Videos vs Yours</h3>
-            <div className="space-y-4">
-              {comp.videos.map((cv) => {
-                const yourMatch = findCreatorVideoMatch({
-                  nicheId: cv.nicheId,
-                  nicheName: cv.nicheName,
-                  title: cv.title,
-                });
-                return (
-                  <div key={cv.id} className="bg-accent/30 rounded-lg p-3">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-[10px] text-primary mb-1">YOUR VIDEO</p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="pb-2 font-medium w-1/2">Their Video</th>
+                  <th className="pb-2 font-medium w-1/2 border-l border-border pl-4">Your Closest Match</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comp.videos.map((cv) => {
+                  const yourMatch = findCreatorVideoMatch({
+                    nicheId: cv.nicheId,
+                    nicheName: cv.nicheName,
+                    title: cv.title,
+                  });
+                  return (
+                    <tr key={cv.id} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
+                      <td className="py-3 pr-4 align-top">
+                        <div className="flex gap-3">
+                          {cv.thumbnailUrl ? (
+                            <img src={cv.thumbnailUrl} alt="" className="w-24 h-14 object-cover rounded-md shrink-0 border border-border" />
+                          ) : (
+                            <div className="w-24 h-14 bg-muted rounded-md shrink-0 border border-border flex items-center justify-center">
+                              <PlayCircle className="h-5 w-5 text-muted-foreground/50" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm text-foreground font-medium line-clamp-2">{cv.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{formatNumber(cv.views)} views · {cv.duration}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 pl-4 border-l border-border align-top">
                         {yourMatch ? (
-                          <>
-                            <p className="text-sm text-foreground">{yourMatch.title}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{formatNumber(yourMatch.views)} views · {yourMatch.duration}</p>
-                          </>
+                          <div className="flex gap-3">
+                            <div className="w-24 h-14 bg-muted rounded-md shrink-0 border border-border overflow-hidden relative group">
+                              <div className="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors z-10" />
+                              <div className="absolute inset-0 flex items-center justify-center text-primary/40 group-hover:text-primary transition-colors">
+                                <PlayCircle className="h-6 w-6" />
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm text-foreground font-medium line-clamp-2">{yourMatch.title}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{formatNumber(yourMatch.views)} views · {yourMatch.duration}</p>
+                            </div>
+                          </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground italic">No matching video</p>
+                          <div className="flex items-center h-14 text-muted-foreground italic text-xs">
+                            No matching video found in your catalog.
+                          </div>
                         )}
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-info mb-1">THEIR VIDEO</p>
-                        <p className="text-sm text-foreground">{cv.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{formatNumber(cv.views)} views · {cv.duration}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

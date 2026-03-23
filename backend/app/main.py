@@ -18,6 +18,7 @@ from app.routers import (
     strategy,
     thumbnails,
     titles,
+    hashtags,
 )
 from app.services.analysis_cache import analysis_cache
 
@@ -63,7 +64,7 @@ app.include_router(titles.router, prefix="/titles", tags=["Titles"])
 app.include_router(thumbnails.router, prefix="/thumbnails", tags=["Thumbnails"])
 app.include_router(simulator.router, prefix="/simulator", tags=["Simulator"])
 app.include_router(ranking.router, prefix="/ranking", tags=["Ranking"])
-
+app.include_router(hashtags.router, prefix="/api/hashtags", tags=["Hashtags"])
 
 @app.get("/health")
 async def health_check():

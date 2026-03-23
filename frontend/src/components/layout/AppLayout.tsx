@@ -1,7 +1,8 @@
 import { Outlet, useLocation } from "react-router-dom";
 
 import AppSidebar from "./AppSidebar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { HashtagPanel } from "@/components/HashtagPanel/HashtagPanel";
 
 const pageTitles: Array<{ title: string; match: (pathname: string) => boolean }> = [
   { title: "Overview", match: (pathname) => pathname === "/app" },
@@ -16,6 +17,8 @@ const pageTitles: Array<{ title: string; match: (pathname: string) => boolean }>
   { title: "Video Ideas", match: (pathname) => pathname === "/app/strategy/ideas" },
   { title: "Title Optimizer", match: (pathname) => pathname === "/app/strategy/titles" },
   { title: "Thumbnails", match: (pathname) => pathname === "/app/strategy/thumbnails" },
+  { title: "Hashtag Strategy", match: (pathname) => pathname.startsWith("/app/strategy/hashtag/") },
+  { title: "Video Ranking", match: (pathname) => pathname === "/app/ranking" },
 ];
 
 function getPageTitle(pathname: string) {
@@ -26,13 +29,15 @@ export default function AppLayout() {
   const location = useLocation();
   const pageTitle = getPageTitle(location.pathname);
 
+  // The hashtag strategy page shouldn't show the panel because it's the focus
+  const showHashtagPanel = !location.pathname.startsWith("/app/strategy/hashtag/");
+
   return (
     <SidebarProvider defaultOpen>
       <AppSidebar />
       <SidebarInset className="min-w-0">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border/60 bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <SidebarTrigger className="-ml-1 h-9 w-9 rounded-lg border border-border/70 bg-background shadow-sm" />
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Workspace</p>
               <h1 className="truncate text-sm font-semibold text-foreground sm:text-base">{pageTitle}</h1>
@@ -40,14 +45,17 @@ export default function AppLayout() {
           </div>
 
           <div className="hidden items-center rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs text-muted-foreground md:flex">
-            Collapse: Ctrl/Cmd + B · Regenerate: Ctrl/Cmd + G
+            Collapse Sidebar: Ctrl/Cmd + B · Regenerate: Ctrl/Cmd + G
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1400px] p-4 sm:p-6">
-            <Outlet />
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-[1400px] p-4 sm:p-6">
+              <Outlet />
+            </div>
           </div>
+          {showHashtagPanel && <HashtagPanel />}
         </div>
       </SidebarInset>
     </SidebarProvider>

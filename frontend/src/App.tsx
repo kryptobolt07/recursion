@@ -17,6 +17,7 @@ import StrategyReportPage from "@/pages/StrategyReportPage";
 import VideoIdeasPage from "@/pages/VideoIdeasPage";
 import TitleOptimizerPage from "@/pages/TitleOptimizerPage";
 import ThumbnailsPage from "@/pages/ThumbnailsPage";
+import HashtagStrategyPage from "@/pages/HashtagStrategyPage";
 import VideoRankingPage from "@/pages/VideoRankingPage";
 import NotFound from "@/pages/NotFound";
 import LoginPage from "@/pages/LoginPage";
@@ -82,6 +83,7 @@ const App = () => (
               <Route path="strategy/ideas" element={<VideoIdeasPage />} />
               <Route path="strategy/titles" element={<TitleOptimizerPage />} />
               <Route path="strategy/thumbnails" element={<ThumbnailsPage />} />
+              <Route path="strategy/hashtag/:hashtag" element={<HashtagStrategyPage />} />
               <Route path="ranking" element={<VideoRankingPage />} />
             </Route>
           </Route>
