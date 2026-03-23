@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -30,23 +30,24 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
 
-          <Route element={<ProtectedRoute />}>
+          <Route path="/app" element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
-              <Route path="/" element={<OverviewPage />} />
-              <Route path="/views" element={<ViewsBreakdownPage />} />
-              <Route path="/content-dna" element={<ContentDNAPage />} />
-              <Route path="/cadence" element={<CadencePage />} />
-              <Route path="/audience" element={<AudiencePage />} />
-              <Route path="/niche/:nicheId" element={<NicheDetailPage />} />
-              <Route path="/competitors" element={<CompetitorDiscoveryPage />} />
-              <Route path="/competitors/landscape" element={<LandscapePage />} />
-              <Route path="/competitors/:competitorId" element={<CompetitorDetailPage />} />
-              <Route path="/strategy" element={<StrategyReportPage />} />
-              <Route path="/strategy/ideas" element={<VideoIdeasPage />} />
-              <Route path="/strategy/titles" element={<TitleOptimizerPage />} />
-              <Route path="/strategy/thumbnails" element={<ThumbnailsPage />} />
+              <Route index element={<OverviewPage />} />
+              <Route path="views" element={<ViewsBreakdownPage />} />
+              <Route path="content-dna" element={<ContentDNAPage />} />
+              <Route path="cadence" element={<CadencePage />} />
+              <Route path="audience" element={<AudiencePage />} />
+              <Route path="niche/:nicheId" element={<NicheDetailPage />} />
+              <Route path="competitors" element={<CompetitorDiscoveryPage />} />
+              <Route path="competitors/landscape" element={<LandscapePage />} />
+              <Route path="competitors/:competitorId" element={<CompetitorDetailPage />} />
+              <Route path="strategy" element={<StrategyReportPage />} />
+              <Route path="strategy/ideas" element={<VideoIdeasPage />} />
+              <Route path="strategy/titles" element={<TitleOptimizerPage />} />
+              <Route path="strategy/thumbnails" element={<ThumbnailsPage />} />
             </Route>
           </Route>
 

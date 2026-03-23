@@ -33,27 +33,27 @@ const navSections = [
   {
     label: "Channel Analysis",
     items: [
-      { to: "/", icon: BarChart3, label: "Overview" },
-      { to: "/views", icon: Eye, label: "Views Breakdown" },
-      { to: "/content-dna", icon: Target, label: "Content DNA" },
-      { to: "/cadence", icon: Calendar, label: "Cadence" },
-      { to: "/audience", icon: Activity, label: "Audience" },
+      { to: "/app", icon: BarChart3, label: "Overview" },
+      { to: "/app/views", icon: Eye, label: "Views Breakdown" },
+      { to: "/app/content-dna", icon: Target, label: "Content DNA" },
+      { to: "/app/cadence", icon: Calendar, label: "Cadence" },
+      { to: "/app/audience", icon: Activity, label: "Audience" },
     ],
   },
   {
     label: "Competitors",
     items: [
-      { to: "/competitors", icon: Search, label: "Discovery" },
-      { to: "/competitors/landscape", icon: TrendingUp, label: "Landscape" },
+      { to: "/app/competitors", icon: Search, label: "Discovery" },
+      { to: "/app/competitors/landscape", icon: TrendingUp, label: "Landscape" },
     ],
   },
   {
     label: "Strategy",
     items: [
-      { to: "/strategy", icon: FileText, label: "Strategy Report" },
-      { to: "/strategy/ideas", icon: Lightbulb, label: "Video Ideas" },
-      { to: "/strategy/titles", icon: Wand2, label: "Title Optimizer" },
-      { to: "/strategy/thumbnails", icon: Image, label: "Thumbnails" },
+      { to: "/app/strategy", icon: FileText, label: "Strategy Report" },
+      { to: "/app/strategy/ideas", icon: Lightbulb, label: "Video Ideas" },
+      { to: "/app/strategy/titles", icon: Wand2, label: "Title Optimizer" },
+      { to: "/app/strategy/thumbnails", icon: Image, label: "Thumbnails" },
     ],
   },
 ];
@@ -113,8 +113,8 @@ export default function AppSidebar() {
               <SidebarMenu>
                 {section.items.map((item) => {
                   const isActive =
-                    item.to === "/"
-                      ? location.pathname === "/"
+                    item.to === "/app"
+                      ? location.pathname === "/app"
                       : location.pathname.startsWith(item.to);
 
                   return (

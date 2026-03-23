@@ -297,6 +297,22 @@ class PublicCompetitorAnalysisService:
         per_week = len(dated) / max(span_days / 7, 1)
         return f"{per_week:.1f} videos/week"
 
+    def _build_posting_pattern(self, videos: list[dict]) -> dict:
+        day_counts: Counter[str] = Counter()
+        hour_counts: Counter[int] = Counter()
+
+        for video in videos:
+            published = parse_iso_date(video.get("published_at", ""))
+            if not published:
+                continue
+            day_counts[published.strftime("%a")] += 1
+            hour_counts[published.hour] += 1
+
+        return {
+            "days": [{"day": day, "count": count} for day, count in day_counts.most_common()],
+            "hours": [{"hour": hour, "count": count} for hour, count in hour_counts.most_common()],
+        }
+
     def _health_score(self, avg_views: float, subscribers: int, engagement_rate: float, sentiment: dict) -> int:
         view_sub_ratio = (avg_views / subscribers * 100) if subscribers else 0
         engagement_score = min(engagement_rate * 10, 100)
@@ -372,15 +388,20 @@ class PublicCompetitorAnalysisService:
         if not videos:
             raise ValueError(f"Channel '{channel_id}' has no public videos to analyze.")
 
-        videos.sort(key=lambda video: video["view_count"], reverse=True)
-        top_videos = videos[:6]
+        videos_by_views = sorted(videos, key=lambda video: video["view_count"], reverse=True)
+        recent_videos = sorted(
+            videos,
+            key=lambda video: parse_iso_date(video.get("published_at", "")) or datetime.min,
+            reverse=True,
+        )
+        top_videos = videos_by_views[:6]
         keywords = self._extract_keywords(
-            [f"{video['title']} {video['description']} {' '.join(video.get('tags', []))}" for video in videos[:12]]
+            [f"{video['title']} {video['description']} {' '.join(video.get('tags', []))}" for video in videos_by_views[:12]]
         )
 
         niche_buckets: dict[str, list[dict]] = defaultdict(list)
         title_style_keywords: set[str] = set()
-        for video in videos[:12]:
+        for video in videos_by_views[:12]:
             niche_name = self._classify_niche(
                 f"{video['title']} {video['description']} {' '.join(video.get('tags', []))}",
                 creator,
@@ -412,19 +433,19 @@ class PublicCompetitorAnalysisService:
                 {
                     "nicheId": slugify(niche_name),
                     "name": niche_name,
-                    "share": round(len(niche_videos) / len(videos[:12]) * 100),
+                    "share": round(len(niche_videos) / len(videos_by_views[:12]) * 100),
                     "avgViews": round(mean(video["view_count"] for video in niche_videos)),
                 }
             )
 
-        avg_views = mean(video["view_count"] for video in videos[:12])
+        avg_views = mean(video["view_count"] for video in videos_by_views[:12])
         engagement_rate = mean(
             ((video["like_count"] + video["comment_count"]) / video["view_count"]) * 100
             if video["view_count"] else 0.0
-            for video in videos[:12]
+            for video in videos_by_views[:12]
         )
 
-        top_comment_videos = sorted(videos[:8], key=lambda video: video["comment_count"], reverse=True)[:3]
+        top_comment_videos = sorted(videos_by_views[:8], key=lambda video: video["comment_count"], reverse=True)[:3]
         comment_rows: list[dict] = []
         for video in top_comment_videos:
             comment_rows.extend(await self.youtube.get_comments(video["id"], max_pages=1))
@@ -434,7 +455,7 @@ class PublicCompetitorAnalysisService:
         audience_corpus = comment_texts + [
             channel.get("title", ""),
             channel.get("description", ""),
-            *[video["title"] for video in videos[:12]],
+            *[video["title"] for video in videos_by_views[:12]],
         ]
         language_distribution = self._estimate_language_distribution(audience_corpus)
         country_distribution = self._estimate_country_distribution(audience_corpus, language_distribution, creator)
@@ -455,7 +476,7 @@ class PublicCompetitorAnalysisService:
                 "publishDate": video["published_at"][:10],
                 "thumbnailUrl": video["thumbnail_url"],
             }
-            for video in videos
+            for video in videos_by_views
             if video["view_count"] >= avg_views * 2
         ][:5]
 
@@ -471,7 +492,8 @@ class PublicCompetitorAnalysisService:
             "subscribers": channel["subscriber_count"],
             "avgViews": round(avg_views),
             "engagementRate": round(engagement_rate, 2),
-            "uploadFrequency": self._upload_frequency_label(videos[:12]),
+            "uploadFrequency": self._upload_frequency_label(recent_videos[:12]),
+            "postingPattern": self._build_posting_pattern(recent_videos[:12]),
             "topNiche": niche_distribution[0]["name"] if niche_distribution else "Other",
             "nicheDistribution": niche_distribution,
             "videos": [
@@ -488,7 +510,8 @@ class PublicCompetitorAnalysisService:
                 for video in top_videos
             ],
             "viralVideos": viral_videos,
-            "engagementTrend": self._build_engagement_trend(videos[:12]),
+            "referenceTitles": [video["title"] for video in videos_by_views[:12]],
+            "engagementTrend": self._build_engagement_trend(recent_videos[:12]),
             "commentSentiment": sentiment,
             "viewerAsks": viewer_asks,
             "sharedNiches": shared_niches,

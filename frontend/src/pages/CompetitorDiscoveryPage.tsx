@@ -62,7 +62,7 @@ export default function CompetitorDiscoveryPage() {
           {competitors.map((c) => (
             <div
               key={c.id}
-              onClick={() => navigate(`/competitors/${c.id}`)}
+              onClick={() => navigate(`/app/competitors/${c.id}`)}
               className="flex items-center gap-4 p-3 rounded-lg bg-accent/30 hover:bg-accent/60 cursor-pointer transition-colors"
             >
               {c.thumbnailUrl ? (
@@ -132,7 +132,7 @@ export default function CompetitorDiscoveryPage() {
             {competitors.map((c) => (
               <tr
                 key={c.id}
-                onClick={() => navigate(`/competitors/${c.id}`)}
+                onClick={() => navigate(`/app/competitors/${c.id}`)}
                 className="border-b border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
               >
                 <td className="py-2 font-medium text-foreground">{c.name}</td>

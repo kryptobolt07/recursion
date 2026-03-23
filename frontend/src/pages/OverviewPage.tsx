@@ -106,7 +106,7 @@ export default function OverviewPage() {
                 return (
                   <tr
                     key={n.id}
-                    onClick={() => navigate(`/niche/${n.id}`)}
+                    onClick={() => navigate(`/app/niche/${n.id}`)}
                     className="border-b border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
                   >
                     <td className="py-2.5">

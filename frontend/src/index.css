@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Roboto+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -78,7 +78,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Manrope', sans-serif;
   }
 
   ::-webkit-scrollbar {
@@ -143,5 +143,63 @@
 
   .metric-neutral {
     @apply bg-muted text-muted-foreground;
+  }
+
+  .landing-body {
+    --landing-paper: #f6f0e8;
+    --landing-ink: #f3ece2;
+    --landing-muted: rgba(255, 245, 235, 0.66);
+    --landing-accent: #df5d3f;
+    --landing-metal: #d9b791;
+  }
+
+  .landing-display {
+    font-family: 'Instrument Serif', serif;
+  }
+
+  .landing-kicker {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .landing-shell {
+    background:
+      linear-gradient(135deg, rgba(223, 93, 63, 0.08), transparent 26%),
+      radial-gradient(circle at 18% 12%, rgba(223, 93, 63, 0.14), transparent 32%),
+      radial-gradient(circle at 84% 18%, rgba(217, 183, 145, 0.08), transparent 30%),
+      linear-gradient(180deg, #090909 0%, #0d0c0c 44%, #12100f 100%);
+  }
+
+  .landing-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 84px 84px;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 100%);
+  }
+
+  .landing-grain {
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px),
+      radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px),
+      radial-gradient(circle at 30% 80%, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px);
+    background-size: 18px 18px, 22px 22px, 24px 24px;
+    mix-blend-mode: soft-light;
+  }
+
+  .landing-reveal {
+    animation: landing-rise 900ms cubic-bezier(0.18, 1, 0.28, 1) both;
+  }
+}
+
+@keyframes landing-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.985);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }

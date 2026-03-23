@@ -4,18 +4,18 @@ import AppSidebar from "./AppSidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 const pageTitles: Array<{ title: string; match: (pathname: string) => boolean }> = [
-  { title: "Overview", match: (pathname) => pathname === "/" },
-  { title: "Views Breakdown", match: (pathname) => pathname === "/views" },
-  { title: "Content DNA", match: (pathname) => pathname === "/content-dna" },
-  { title: "Cadence", match: (pathname) => pathname === "/cadence" },
-  { title: "Audience", match: (pathname) => pathname === "/audience" },
-  { title: "Competitor Discovery", match: (pathname) => pathname === "/competitors" },
-  { title: "Landscape", match: (pathname) => pathname === "/competitors/landscape" },
-  { title: "Competitor Detail", match: (pathname) => pathname.startsWith("/competitors/") },
-  { title: "Strategy Report", match: (pathname) => pathname === "/strategy" },
-  { title: "Video Ideas", match: (pathname) => pathname === "/strategy/ideas" },
-  { title: "Title Optimizer", match: (pathname) => pathname === "/strategy/titles" },
-  { title: "Thumbnails", match: (pathname) => pathname === "/strategy/thumbnails" },
+  { title: "Overview", match: (pathname) => pathname === "/app" },
+  { title: "Views Breakdown", match: (pathname) => pathname === "/app/views" },
+  { title: "Content DNA", match: (pathname) => pathname === "/app/content-dna" },
+  { title: "Cadence", match: (pathname) => pathname === "/app/cadence" },
+  { title: "Audience", match: (pathname) => pathname === "/app/audience" },
+  { title: "Competitor Discovery", match: (pathname) => pathname === "/app/competitors" },
+  { title: "Landscape", match: (pathname) => pathname === "/app/competitors/landscape" },
+  { title: "Competitor Detail", match: (pathname) => pathname.startsWith("/app/competitors/") },
+  { title: "Strategy Report", match: (pathname) => pathname === "/app/strategy" },
+  { title: "Video Ideas", match: (pathname) => pathname === "/app/strategy/ideas" },
+  { title: "Title Optimizer", match: (pathname) => pathname === "/app/strategy/titles" },
+  { title: "Thumbnails", match: (pathname) => pathname === "/app/strategy/thumbnails" },
 ];
 
 function getPageTitle(pathname: string) {

@@ -19,7 +19,7 @@ export default function NicheBlockChart() {
         {niches.map((niche) => (
           <div
             key={niche.id}
-            onClick={() => navigate(`/niche/${niche.id}`)}
+            onClick={() => navigate(`/app/niche/${niche.id}`)}
             className={`niche-block bg-gradient-to-b ${nicheColorClasses[niche.colorIndex] || "from-gray-600 to-gray-700"} flex flex-col justify-between relative overflow-hidden`}
             style={{ flex: niche.uploadShare }}
           >

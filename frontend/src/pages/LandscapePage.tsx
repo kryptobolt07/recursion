@@ -97,7 +97,7 @@ export default function LandscapePage() {
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ""}
               />
               <Scatter data={scatterData} onClick={(data) => {
-                if (!data.isYou) navigate(`/competitors/${data.id}`);
+                if (!data.isYou) navigate(`/app/competitors/${data.id}`);
               }}>
                 {scatterData.map((entry, i) => (
                   <Cell
