@@ -135,7 +135,7 @@ export default function LandscapePage() {
                 unit="%"
               />
               <Tooltip
-                contentStyle={{ backgroundColor: "hsl(0,0%,12%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, color: "hsl(0,0%,95%)" }}
+                contentStyle={{ backgroundColor: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))" }}
                 formatter={(value: number, name: string) => [name === "Subscribers" ? formatNumber(value) : `${value}%`, name]}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ""}
               />

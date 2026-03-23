@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   BarChart3,
@@ -12,6 +12,9 @@ import {
   TrendingUp,
   Trophy,
   Wand2,
+  LogOut,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 import {
@@ -29,6 +32,8 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/components/theme-provider";
 
 const navSections = [
   {
@@ -62,12 +67,20 @@ const navSections = [
 
 export default function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isMobile, setOpenMobile, toggleSidebar } = useSidebar();
+  const { signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const handleNavigate = () => {
     if (isMobile) {
       setOpenMobile(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
   };
 
   return (
@@ -139,7 +152,7 @@ export default function AppSidebar() {
 
       <SidebarSeparator />
 
-      <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2">
+      <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2 flex flex-col gap-2">
         <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/35 p-3 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:border-none group-data-[collapsible=icon]:bg-transparent">
           <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sidebar border border-sidebar-border/50 text-sidebar-accent-foreground shadow-sm group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:rounded-lg">
@@ -161,6 +174,28 @@ export default function AppSidebar() {
               <p className="mt-1 text-sm font-semibold text-sidebar-accent-foreground">Dev + AI</p>
             </div>
           </div>
+        </div>
+
+        <div className="flex flex-col gap-1 mt-1 group-data-[collapsible=icon]:items-center">
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="flex items-center gap-3 w-full rounded-md p-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+            title="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
+            <span className="group-data-[collapsible=icon]:hidden">
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </span>
+          </button>
+          
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-3 w-full rounded-md p-2 text-sm text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
+          </button>
         </div>
       </SidebarFooter>
 

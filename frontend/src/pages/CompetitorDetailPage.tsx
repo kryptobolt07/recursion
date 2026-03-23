@@ -459,7 +459,7 @@ export default function CompetitorDetailPage() {
               <LineChart data={comp.engagementTrend}>
                 <XAxis dataKey="month" tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }} axisLine={false} tickLine={false} domain={["dataMin - 0.5", "dataMax + 0.5"]} />
-                <Tooltip contentStyle={{ backgroundColor: "hsl(0,0%,12%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, color: "hsl(0,0%,95%)" }} />
+                <Tooltip contentStyle={{ backgroundColor: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))" }} />
                 <Line type="monotone" dataKey="rate" stroke="hsl(210,90%,55%)" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>

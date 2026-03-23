@@ -86,7 +86,7 @@ export default function ContentDNAPage() {
             <XAxis dataKey="bucket" tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ backgroundColor: "hsl(0,0%,12%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, color: "hsl(0,0%,95%)" }}
+              contentStyle={{ backgroundColor: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))" }}
             />
             <Bar dataKey="count" radius={[4, 4, 0, 0]}>
               {globalLengthDist.map((_, i) => (

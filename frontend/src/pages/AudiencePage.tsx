@@ -62,7 +62,7 @@ export default function AudiencePage() {
             <BarChart data={globalAge}>
               <XAxis dataKey="band" tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ backgroundColor: "hsl(0,0%,12%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, color: "hsl(0,0%,95%)" }} />
+              <Tooltip contentStyle={{ backgroundColor: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))" }} />
               <Bar dataKey="percentage" radius={[4, 4, 0, 0]}>
                 {globalAge.map((_, i) => (
                   <Cell key={i} fill={i === 2 ? "hsl(0,90%,50%)" : "hsl(0,0%,25%)"} />
@@ -90,7 +90,7 @@ export default function AudiencePage() {
                   <Cell key={`cell-${index}`} fill={genderColors[index % genderColors.length]} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ backgroundColor: "hsl(0,0%,12%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, color: "hsl(0,0%,95%)" }} />
+              <Tooltip contentStyle={{ backgroundColor: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))" }} />
             </PieChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-4 mt-2">

@@ -79,7 +79,7 @@ function IdeaSimulation({ idea }: { idea: VideoIdea }) {
                     <XAxis dataKey="day" tick={{ fill: "hsl(0,0%,55%)", fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: "hsl(0,0%,55%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: "hsl(0,0%,12%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, fontSize: 12 }} 
+                      contentStyle={{ backgroundColor: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))", fontSize: 12 }} 
                       formatter={(val: number) => [val.toLocaleString(), "Views"]}
                     />
                     <Line type="monotone" dataKey="optimistic" stroke="hsl(142,70%,45%)" strokeWidth={1} strokeDasharray="3 3" dot={false} name="Optimistic" />

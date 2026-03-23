@@ -60,7 +60,7 @@ export default function CadencePage() {
           <BarChart data={globalMonthly}>
             <XAxis dataKey="month" tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ backgroundColor: "hsl(0,0%,12%)", border: "1px solid hsl(0,0%,18%)", borderRadius: 8, color: "hsl(0,0%,95%)" }} />
+            <Tooltip contentStyle={{ backgroundColor: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))" }} />
             {niches.map((n, i) => (
               <Bar key={n.id} dataKey={n.id} stackId="a" fill={nicheBarColors[i]} name={n.name} radius={i === niches.length - 1 ? [4, 4, 0, 0] : undefined} />
             ))}
