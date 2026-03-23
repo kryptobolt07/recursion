@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Loader2, Wand2 } from "lucide-react";
 
+import { AnalysisLoader } from "@/components/shared/AnalysisLoader";
 import { apiFetch } from "@/lib/api";
 import { demoCreatorChannelId } from "@/lib/demo";
+import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
 
 interface TitleVariant {
   title: string;
@@ -36,29 +38,39 @@ const nicheOptions = [
 ];
 
 export default function TitleOptimizerPage() {
+  const queryClient = useQueryClient();
   const [input, setInput] = useState("");
   const [niche, setNiche] = useState("");
   const [result, setResult] = useState<OptimizeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [bulkRefreshVersion, setBulkRefreshVersion] = useState(0);
+  const forceBulkRefresh = useRef(false);
+
+  const fetchBulk = async (force = false): Promise<BulkResponse> => {
+    const forceSuffix = force || forceBulkRefresh.current ? "?force=true" : "";
+    forceBulkRefresh.current = false;
+    const res = await apiFetch(`/titles/bulk/${demoCreatorChannelId}${forceSuffix}`, { method: "POST" });
+    if (!res.ok) throw new Error("Failed to load bulk title opportunities");
+    return res.json();
+  };
 
   const bulkQuery = useQuery<BulkResponse>({
-    queryKey: ["title-bulk", demoCreatorChannelId],
-    queryFn: async () => {
-      const res = await apiFetch(`/titles/bulk/${demoCreatorChannelId}`, { method: "POST" });
-      if (!res.ok) throw new Error("Failed to load bulk title opportunities");
-      return res.json();
-    },
+    queryKey: ["title-bulk", demoCreatorChannelId, bulkRefreshVersion],
+    enabled: false,
+    queryFn: () => fetchBulk(),
   });
 
-  const handleOptimize = async () => {
+  const handleOptimize = async (force = false) => {
     if (!input.trim()) return;
 
     setIsOptimizing(true);
     setError(null);
+    setResult(null);
 
     try {
-      const res = await apiFetch("/titles/optimize", {
+      const forceSuffix = force ? "?force=true" : "";
+      const res = await apiFetch(`/titles/optimize${forceSuffix}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,6 +87,19 @@ export default function TitleOptimizerPage() {
       setIsOptimizing(false);
     }
   };
+  useAnalysisRefreshShortcut({
+    label: "title analysis",
+    onRefresh: async () => {
+      const nextVersion = bulkRefreshVersion + 1;
+      forceBulkRefresh.current = true;
+      const forcedBulk = await fetchBulk(true);
+      queryClient.setQueryData(["title-bulk", demoCreatorChannelId, nextVersion], forcedBulk);
+      setBulkRefreshVersion(nextVersion);
+      if (input.trim()) {
+        await handleOptimize(true);
+      }
+    },
+  });
 
   const handleCopy = async (value: string) => {
     try {
@@ -127,6 +152,21 @@ export default function TitleOptimizerPage() {
         <div className="stat-card border border-destructive/30 bg-destructive/10">
           <p className="text-sm text-destructive">{error}</p>
         </div>
+      )}
+
+      {isOptimizing && (
+        <AnalysisLoader
+          compact
+          eyebrow="Title Optimizer"
+          title="Rebuilding the title against real competitor formulas"
+          subtitle="We are checking niche fit, top-performing packaging patterns, and recent reference titles before writing alternatives."
+          steps={[
+            "Detecting the closest niche",
+            "Pulling the strongest title formulas",
+            "Comparing reference winners",
+            "Generating testable title variants",
+          ]}
+        />
       )}
 
       {result && (
@@ -194,10 +234,23 @@ export default function TitleOptimizerPage() {
 
       <div className="stat-card">
         <h3 className="section-header">Bulk Opportunities</h3>
-        {bulkQuery.isLoading ? (
+        {!bulkQuery.data && !bulkQuery.isLoading && !bulkQuery.error ? (
+          <div className="flex flex-col gap-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">Load a fast snapshot of your existing titles and the strongest deterministic rewrite for each.</p>
+            <button
+              onClick={() => {
+                void bulkQuery.refetch();
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-accent px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent/70"
+            >
+              <Wand2 className="h-4 w-4" />
+              Load opportunities
+            </button>
+          </div>
+        ) : bulkQuery.isLoading ? (
           <div className="flex items-center gap-3 py-6">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Loading creator title opportunities...</p>
+            <p className="text-sm text-muted-foreground">Scanning your library for quick title opportunities...</p>
           </div>
         ) : bulkQuery.error ? (
           <p className="text-sm text-muted-foreground">Could not load bulk opportunities.</p>

@@ -1,50 +1,78 @@
-"""Gemini 2.5 Flash client for structured strategy generation."""
+"""Groq chat client used as a fallback when Gemini is unavailable."""
 
 from __future__ import annotations
 
-import asyncio
 import json
+import logging
 import re
 from typing import Any
 
-import google.generativeai as genai
+import httpx
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 
-class GeminiClient:
-    """Wrapper for Gemini 2.5 Flash with JSON helpers."""
+
+class GroqClient:
+    """Wrapper for Groq chat completions with JSON helpers."""
 
     def __init__(self):
-        if not settings.GEMINI_API_KEY:
-            raise RuntimeError("GEMINI_API_KEY is not configured.")
+        if not settings.GROQ_API_KEY:
+            raise RuntimeError("GROQ_API_KEY is not configured.")
 
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel("gemini-2.5-flash")
-        self.request_count = 0
+        self.api_key = settings.GROQ_API_KEY
+        self.model = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
+        self.base_url = "https://api.groq.com/openai/v1/chat/completions"
 
-    async def generate(self, prompt: str, json_output: bool = False) -> str:
-        """Single generation call. Use json_output=True for structured responses."""
-        generation_config = {}
-        if json_output:
-            generation_config["response_mime_type"] = "application/json"
+    async def generate(self, prompt: str) -> str:
+        logger.info("Groq request starting with model=%s", self.model)
+        payload = {
+            "model": self.model,
+            "temperature": 0.35,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "Return only valid JSON that exactly matches the requested schema.",
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
 
-        response = await asyncio.to_thread(
-            self.model.generate_content,
-            prompt,
-            generation_config=generation_config if generation_config else None,
-        )
-        self.request_count += 1
-        return getattr(response, "text", "") or ""
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(self.base_url, json=payload, headers=headers)
+            response.raise_for_status()
+            body = response.json()
+        logger.info("Groq request completed with model=%s", self.model)
+
+        try:
+            return body["choices"][0]["message"]["content"] or ""
+        except (KeyError, IndexError, TypeError) as exc:
+            logger.warning("Groq returned an invalid completion payload")
+            raise ValueError("Groq returned an invalid completion payload.") from exc
 
     def _parse_json_text(self, raw_text: str) -> Any:
         if not raw_text.strip():
-            raise ValueError("Gemini returned an empty response.")
+            raise ValueError("Groq returned an empty response.")
 
         try:
             return json.loads(raw_text)
         except json.JSONDecodeError:
             pass
+
+        fenced = re.findall(r"```(?:json)?\s*(.*?)```", raw_text, flags=re.DOTALL | re.IGNORECASE)
+        for block in fenced:
+            try:
+                return json.loads(block)
+            except json.JSONDecodeError:
+                continue
 
         matches = re.findall(r"(\{.*\}|\[.*\])", raw_text, flags=re.DOTALL)
         for match in matches:
@@ -53,14 +81,13 @@ class GeminiClient:
             except json.JSONDecodeError:
                 continue
 
-        raise ValueError("Gemini returned invalid JSON.")
+        raise ValueError("Groq returned invalid JSON.")
 
     async def generate_json(self, prompt: str) -> Any:
-        raw_text = await self.generate(prompt, json_output=True)
+        raw_text = await self.generate(prompt)
         return self._parse_json_text(raw_text)
 
     async def generate_strategy(self, analysis_data: dict) -> dict:
-        """Convert structured analysis into roadmap and summary sections."""
         prompt = f"""
 You are a YouTube growth strategist.
 Use only the provided evidence. Do not invent channels, metrics, or tactics not grounded in the input.
@@ -85,11 +112,10 @@ Rules:
 """
         response = await self.generate_json(prompt)
         if not isinstance(response, dict):
-            raise ValueError("Gemini strategy response was not an object.")
+            raise ValueError("Groq strategy response was not an object.")
         return response
 
     async def generate_video_ideas(self, inputs: dict) -> list[dict]:
-        """Generate video ideas from competitor gaps and audience asks."""
         prompt = f"""
 You are generating YouTube video ideas for a creator.
 Use only the evidence provided. Keep ideas practical, specific, and aligned to the creator's audience.
@@ -111,11 +137,10 @@ Evidence:
 """
         response = await self.generate_json(prompt)
         if not isinstance(response, list):
-            raise ValueError("Gemini video idea response was not a list.")
+            raise ValueError("Groq video idea response was not a list.")
         return response
 
     async def optimize_title(self, title: str, formulas: list[str], examples: list[str], context: dict) -> dict:
-        """Rewrite a title into 5 variants using top formulas."""
         prompt = f"""
 You are optimizing a YouTube title.
 Original title: {title}
@@ -147,11 +172,10 @@ Rules:
 """
         response = await self.generate_json(prompt)
         if not isinstance(response, dict):
-            raise ValueError("Gemini title response was not an object.")
+            raise ValueError("Groq title response was not an object.")
         return response
 
     async def suggest_thumbnails(self, title: str, niche: str, modal_style: dict, examples: list[dict]) -> list[dict]:
-        """Generate 3 thumbnail concept briefs."""
         prompt = f"""
 You are designing thumbnail concepts for a YouTube creator.
 Video title: {title}
@@ -172,11 +196,10 @@ Return strict JSON with exactly 3 objects:
 """
         response = await self.generate_json(prompt)
         if not isinstance(response, list):
-            raise ValueError("Gemini thumbnail response was not a list.")
+            raise ValueError("Groq thumbnail response was not a list.")
         return response
 
     async def classify_topic_type(self, script_summary: str) -> str:
-        """Classify as evergreen / trending / timesensitive for simulator."""
         prompt = f"""
 Classify this YouTube topic as one of: evergreen, trending, timesensitive.
 Return only JSON: {{"type": "evergreen|trending|timesensitive"}}
@@ -186,7 +209,7 @@ Topic:
 """
         response = await self.generate_json(prompt)
         if not isinstance(response, dict):
-            raise ValueError("Gemini topic classification response was not an object.")
+            raise ValueError("Groq topic classification response was not an object.")
         topic_type = str(response.get("type", "evergreen")).lower()
         if topic_type not in {"evergreen", "trending", "timesensitive"}:
             return "evergreen"

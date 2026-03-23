@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # Gemini
     GEMINI_API_KEY: str = ""
 
+    # Groq
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+
     # App URLs
     BACKEND_URL: str = "http://localhost:8000"
     FRONTEND_URL: str = "http://localhost:8080"

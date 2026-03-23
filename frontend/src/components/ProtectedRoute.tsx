@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { AnalysisWarmup } from "@/components/AnalysisWarmup";
 
 export const ProtectedRoute = () => {
     const { user, isLoading } = useAuth();
@@ -18,5 +19,10 @@ export const ProtectedRoute = () => {
         return <Navigate to="/login" replace />;
     }
 
-    return <Outlet />;
+    return (
+        <>
+            <AnalysisWarmup />
+            <Outlet />
+        </>
+    );
 };

@@ -40,7 +40,7 @@ export default function AppLayout() {
           </div>
 
           <div className="hidden items-center rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs text-muted-foreground md:flex">
-            Collapse with Ctrl/Cmd + B
+            Collapse: Ctrl/Cmd + B · Regenerate: Ctrl/Cmd + G
           </div>
         </header>
 

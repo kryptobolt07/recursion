@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Image, Loader2 } from "lucide-react";
 
+import { AnalysisLoader } from "@/components/shared/AnalysisLoader";
 import { apiFetch } from "@/lib/api";
 import { demoCreatorChannelId } from "@/lib/demo";
+import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
 
 interface ThumbnailConcept {
   id: number;
@@ -41,14 +43,16 @@ export default function ThumbnailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (force = false) => {
     if (!title.trim()) return;
 
     setIsLoading(true);
     setError(null);
+    setResult(null);
 
     try {
-      const res = await apiFetch("/thumbnails/suggest", {
+      const forceSuffix = force ? "?force=true" : "";
+      const res = await apiFetch(`/thumbnails/suggest${forceSuffix}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -65,6 +69,15 @@ export default function ThumbnailsPage() {
       setIsLoading(false);
     }
   };
+  useAnalysisRefreshShortcut({
+    label: "thumbnail analysis",
+    onRefresh: async () => {
+      if (title.trim()) {
+        await handleGenerate(true);
+      }
+    },
+    enabled: !!title.trim(),
+  });
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -109,6 +122,21 @@ export default function ThumbnailsPage() {
         <div className="stat-card border border-destructive/30 bg-destructive/10">
           <p className="text-sm text-destructive">{error}</p>
         </div>
+      )}
+
+      {isLoading && (
+        <AnalysisLoader
+          compact
+          eyebrow="Thumbnail Lab"
+          title="Mapping real thumbnail patterns from matched competitors"
+          subtitle="The engine is extracting palette, composition, text density, and reference-video packaging before it suggests concepts."
+          steps={[
+            "Fetching winning public thumbnails",
+            "Reading palette and composition bias",
+            "Comparing overlay text patterns",
+            "Writing concept directions",
+          ]}
+        />
       )}
 
       {result && (

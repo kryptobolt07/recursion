@@ -189,6 +189,107 @@
   .landing-reveal {
     animation: landing-rise 900ms cubic-bezier(0.18, 1, 0.28, 1) both;
   }
+
+  .analysis-loader-shell {
+    @apply relative overflow-hidden rounded-[1.5rem] border border-border/70 bg-card/95 shadow-[0_24px_90px_rgba(0,0,0,0.35)];
+    background:
+      radial-gradient(circle at 12% 18%, rgba(239, 68, 68, 0.18), transparent 28%),
+      radial-gradient(circle at 88% 16%, rgba(255, 255, 255, 0.05), transparent 24%),
+      linear-gradient(180deg, rgba(26, 26, 26, 0.96), rgba(14, 14, 14, 0.96));
+  }
+
+  .analysis-loader-grid {
+    @apply pointer-events-none absolute inset-0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent 100%);
+  }
+
+  .analysis-loader-beam {
+    @apply pointer-events-none absolute -left-[18%] top-0 h-full w-[52%];
+    background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.09), transparent);
+    transform: skewX(-18deg);
+    animation: analysis-beam 2.8s ease-in-out infinite;
+  }
+
+  .analysis-loader-visual {
+    @apply rounded-[1.25rem] border border-border/60 bg-background/55 p-4;
+    backdrop-filter: blur(8px);
+  }
+
+  .analysis-loader-orbit {
+    @apply relative mx-auto mb-5 h-32 w-32;
+  }
+
+  .analysis-loader-orbit-ring {
+    @apply absolute inset-0 rounded-full border;
+  }
+
+  .analysis-loader-orbit-ring-a {
+    border-color: rgba(239, 68, 68, 0.38);
+    animation: analysis-spin 8s linear infinite;
+  }
+
+  .analysis-loader-orbit-ring-b {
+    inset: 14px;
+    border-color: rgba(255, 255, 255, 0.12);
+    animation: analysis-spin 6s linear infinite reverse;
+  }
+
+  .analysis-loader-orbit-ring-c {
+    inset: 28px;
+    border-color: rgba(239, 68, 68, 0.22);
+    animation: analysis-pulse 1.8s ease-in-out infinite;
+  }
+
+  .analysis-loader-core {
+    @apply absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-primary/30 bg-primary/15 shadow-[0_0_30px_rgba(239,68,68,0.3)];
+  }
+
+  .analysis-loader-node {
+    @apply absolute h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_18px_rgba(239,68,68,0.5)];
+    animation: analysis-node 1.8s ease-in-out infinite;
+  }
+
+  .analysis-loader-node-a {
+    left: 10px;
+    top: 20px;
+  }
+
+  .analysis-loader-node-b {
+    right: 16px;
+    top: 12px;
+    animation-delay: 240ms;
+  }
+
+  .analysis-loader-node-c {
+    bottom: 16px;
+    left: 26px;
+    animation-delay: 480ms;
+  }
+
+  .analysis-loader-bar-wrap {
+    @apply flex h-20 items-end rounded-full border border-border/60 bg-background/65 px-1 py-1;
+  }
+
+  .analysis-loader-bar {
+    @apply w-full rounded-full bg-primary/80;
+    height: 32%;
+    animation: analysis-bar 1.3s ease-in-out infinite;
+  }
+
+  .analysis-loader-step {
+    @apply flex items-center gap-3 rounded-2xl border border-border/70 bg-background/45 px-3 py-3 text-sm text-muted-foreground transition-colors duration-300;
+    backdrop-filter: blur(10px);
+  }
+
+  .analysis-loader-ping {
+    @apply h-2.5 w-2.5 rounded-full bg-primary;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    animation: analysis-ping 1.5s ease-out infinite;
+  }
 }
 
 @keyframes landing-rise {
@@ -201,5 +302,65 @@
     opacity: 1;
     transform: translateY(0) scale(1);
     filter: blur(0);
+  }
+}
+
+@keyframes analysis-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes analysis-pulse {
+  0%, 100% {
+    transform: scale(0.96);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+}
+
+@keyframes analysis-node {
+  0%, 100% {
+    transform: scale(0.8);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+@keyframes analysis-bar {
+  0%, 100% {
+    height: 26%;
+  }
+  50% {
+    height: 92%;
+  }
+}
+
+@keyframes analysis-ping {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes analysis-beam {
+  0%, 100% {
+    transform: translateX(-14%) skewX(-18deg);
+    opacity: 0.15;
+  }
+  50% {
+    transform: translateX(124%) skewX(-18deg);
+    opacity: 0.55;
   }
 }

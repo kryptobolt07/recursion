@@ -262,6 +262,34 @@ class YouTubeDataAPI:
             )
         return results
 
+    async def search_videos(self, query: str, max_results: int = 5) -> list[dict]:
+        """Search for videos (100 units per call!)."""
+        service = self._get_service()
+        request = service.search().list(
+            part="snippet",
+            q=query,
+            type="video",
+            maxResults=max_results,
+            order="relevance",
+        )
+        try:
+            response = request.execute()
+        except HttpError:
+            response = {"items": []}
+
+        self.quota_used += QUOTA_COSTS["search.list"]
+        video_ids: list[str] = []
+        for item in response.get("items", []):
+            video_id = item.get("id", {}).get("videoId")
+            if video_id:
+                video_ids.append(video_id)
+
+        if not video_ids:
+            return []
+
+        # Fetch full video details to get accurate view_count and durations
+        return await self.get_videos_batch(video_ids)
+
     @property
     def remaining_quota(self) -> int:
         return 10_000 - self.quota_used

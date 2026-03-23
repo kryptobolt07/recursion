@@ -18,9 +18,9 @@ class ThumbnailRequest(BaseModel):
 
 
 @router.post("/suggest")
-async def suggest_thumbnails(req: ThumbnailRequest):
+async def suggest_thumbnails(req: ThumbnailRequest, force: bool = False):
     """§5.4 Thumbnail Suggestion — 3 concept briefs with rationale."""
     try:
-        return await service.suggest_thumbnails(req.title, req.niche, req.channel_id)
+        return await service.suggest_thumbnails(req.title, req.niche, req.channel_id, force=force)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

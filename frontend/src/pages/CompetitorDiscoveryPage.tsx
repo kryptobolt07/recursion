@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import { channelStats, formatNumber } from "@/data/mockData";
 import { Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { demoCreatorChannelId } from "@/lib/demo";
+import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
 
 interface CompetitorCard {
   id: string;
@@ -23,12 +25,23 @@ interface CompetitorCard {
 
 export default function CompetitorDiscoveryPage() {
   const navigate = useNavigate();
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const forceNextRefresh = useRef(false);
   const { data, isLoading, error } = useQuery<{ competitors: CompetitorCard[] }>({
-    queryKey: ["competitors", demoCreatorChannelId],
+    queryKey: ["competitors", demoCreatorChannelId, refreshVersion],
     queryFn: async () => {
-      const res = await apiFetch(`/competitors/discover/${demoCreatorChannelId}`);
+      const forceSuffix = forceNextRefresh.current ? "?force=true" : "";
+      forceNextRefresh.current = false;
+      const res = await apiFetch(`/competitors/discover/${demoCreatorChannelId}${forceSuffix}`);
       if (!res.ok) throw new Error("Failed to discover competitors");
       return res.json();
+    },
+  });
+  useAnalysisRefreshShortcut({
+    label: "competitor discovery",
+    onRefresh: () => {
+      forceNextRefresh.current = true;
+      setRefreshVersion((value) => value + 1);
     },
   });
 

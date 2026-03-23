@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { channelStats, niches, formatNumber } from "@/data/mockData";
 import StatStrip from "@/components/shared/StatStrip";
@@ -9,6 +9,7 @@ import { ArrowLeft, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { apiFetch } from "@/lib/api";
 import { findCreatorNiche, findCreatorVideoMatch } from "@/lib/creatorDerived";
+import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
 
 const tabs = ["Overview", "Content Similarity", "Similar Videos", "Thumbnail Analysis", "Viral Patterns", "Engagement"] as const;
 
@@ -70,21 +71,37 @@ export default function CompetitorDetailPage() {
   const { competitorId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>("Overview");
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const forceOverviewRefresh = useRef(false);
+  const forceThumbnailRefresh = useRef(false);
   const { data: comp, isLoading, error } = useQuery<CompetitorDetail>({
-    queryKey: ["competitor_detail", competitorId],
+    queryKey: ["competitor_detail", competitorId, refreshVersion],
     queryFn: async () => {
-      const res = await apiFetch(`/competitors/${competitorId}/overview`);
+      const forceSuffix = forceOverviewRefresh.current ? "?force=true" : "";
+      const res = await apiFetch(`/competitors/${competitorId}/overview${forceSuffix}`);
+      forceOverviewRefresh.current = false;
       if (!res.ok) throw new Error("Failed to load competitor details");
       return res.json();
     },
     enabled: !!competitorId,
   });
   const { data: thumbnailAnalysis } = useQuery<CompetitorThumbnailAnalysis>({
-    queryKey: ["competitor_thumbnail_analysis", competitorId],
+    queryKey: ["competitor_thumbnail_analysis", competitorId, refreshVersion],
     queryFn: async () => {
-      const res = await apiFetch(`/competitors/${competitorId}/thumbnails`);
+      const forceSuffix = forceThumbnailRefresh.current ? "?force=true" : "";
+      const res = await apiFetch(`/competitors/${competitorId}/thumbnails${forceSuffix}`);
+      forceThumbnailRefresh.current = false;
       if (!res.ok) throw new Error("Failed to load thumbnail analysis");
       return res.json();
+    },
+    enabled: !!competitorId,
+  });
+  useAnalysisRefreshShortcut({
+    label: "competitor analysis",
+    onRefresh: () => {
+      forceOverviewRefresh.current = true;
+      forceThumbnailRefresh.current = true;
+      setRefreshVersion((value) => value + 1);
     },
     enabled: !!competitorId,
   });

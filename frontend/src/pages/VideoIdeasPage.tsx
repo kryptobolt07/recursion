@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Flame, Leaf, Lightbulb, Loader2 } from "lucide-react";
+import { Clock, Flame, Leaf, Lightbulb } from "lucide-react";
 
+import { AnalysisLoader } from "@/components/shared/AnalysisLoader";
 import { apiFetch } from "@/lib/api";
 import { demoCreatorChannelId } from "@/lib/demo";
+import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
 
 interface VideoIdea {
   id: string;
@@ -18,13 +20,24 @@ interface VideoIdea {
 
 export default function VideoIdeasPage() {
   const [filter, setFilter] = useState("all");
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const forceNextRefresh = useRef(false);
 
   const ideasQuery = useQuery<{ ideas: VideoIdea[] }>({
-    queryKey: ["video-ideas", demoCreatorChannelId],
+    queryKey: ["video-ideas", demoCreatorChannelId, refreshVersion],
     queryFn: async () => {
-      const res = await apiFetch(`/strategy/ideas/${demoCreatorChannelId}`, { method: "POST" });
+      const forceSuffix = forceNextRefresh.current ? "?force=true" : "";
+      forceNextRefresh.current = false;
+      const res = await apiFetch(`/strategy/ideas/${demoCreatorChannelId}${forceSuffix}`, { method: "POST" });
       if (!res.ok) throw new Error("Failed to load video ideas");
       return res.json();
+    },
+  });
+  useAnalysisRefreshShortcut({
+    label: "video ideas",
+    onRefresh: () => {
+      forceNextRefresh.current = true;
+      setRefreshVersion((value) => value + 1);
     },
   });
 
@@ -42,9 +55,18 @@ export default function VideoIdeasPage() {
 
   if (ideasQuery.isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <AnalysisLoader
+        className="min-h-[52vh]"
+        eyebrow="Idea Engine"
+        title="Turning audience demand into usable video concepts"
+        subtitle="The engine is clustering public comment asks, outlier videos, and competitor gaps to produce ideas you can ship."
+        steps={[
+          "Pulling request phrases from comments",
+          "Matching them to real outperforming videos",
+          "Ranking urgency and competition",
+          "Formatting concepts for your channel mix",
+        ]}
+      />
     );
   }
 

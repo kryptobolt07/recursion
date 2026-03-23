@@ -17,31 +17,18 @@ class TitleOptimizeRequest(BaseModel):
 
 
 @router.post("/optimize")
-async def optimize_title(req: TitleOptimizeRequest):
+async def optimize_title(req: TitleOptimizeRequest, force: bool = False):
     """§5.3 Title Optimizer — 5 rewritten variants using top-performing formulas."""
     try:
-        return await service.optimize_title(req.title, req.niche, req.channel_id)
+        return await service.optimize_title(req.title, req.niche, req.channel_id, force=force)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @router.post("/bulk/{channel_id}")
-async def bulk_optimize(channel_id: str):
+async def bulk_optimize(channel_id: str, force: bool = False):
     """§5.3 Bulk mode — score all existing titles, return top 10 with highest improvement potential."""
     try:
-        creator = DEMO_CREATOR
-        optimizable = []
-        for title in creator["top_video_titles"][:10]:
-            result = await service.optimize_title(title, "", channel_id)
-            top_variant = result["variants"][0] if result["variants"] else None
-            optimizable.append(
-                {
-                    "original": title,
-                    "topVariant": top_variant["title"] if top_variant else "",
-                    "bestFormula": top_variant["formula"] if top_variant else "",
-                    "reach": top_variant["reach"] if top_variant else 0,
-                }
-            )
-        return {"optimizable": optimizable}
+        return await service.bulk_optimize_titles(channel_id, force=force)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

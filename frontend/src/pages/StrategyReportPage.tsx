@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
 
+import { AnalysisLoader } from "@/components/shared/AnalysisLoader";
 import { apiFetch } from "@/lib/api";
 import { demoCreatorChannelId } from "@/lib/demo";
+import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
 
 interface MixRow {
   name: string;
@@ -48,30 +50,74 @@ interface PostingStrategy {
 
 const mixColors = ["bg-red-600", "bg-blue-600", "bg-green-600", "bg-amber-600", "bg-fuchsia-600"];
 
+function MixBar({ rows }: { rows: MixRow[] }) {
+  if (!rows.length) {
+    return <div className="flex h-8 items-center rounded-lg border border-dashed border-border/70 px-3 text-xs text-muted-foreground">No mix available</div>;
+  }
+
+  return (
+    <div className="flex h-8 overflow-hidden rounded-lg">
+      {rows.map((row, index) => (
+        <div
+          key={row.name}
+          className={`${mixColors[index % mixColors.length]} flex items-center justify-center`}
+          style={{ width: `${row.share}%` }}
+        >
+          {row.share > 9 && <span className="text-[10px] text-primary-foreground">{row.share}%</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function StrategyReportPage() {
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const forceReportRefresh = useRef(false);
+  const forcePostingRefresh = useRef(false);
   const reportQuery = useQuery<StrategyReport>({
-    queryKey: ["strategy-report", demoCreatorChannelId],
+    queryKey: ["strategy-report", demoCreatorChannelId, refreshVersion],
     queryFn: async () => {
-      const res = await apiFetch(`/strategy/report/${demoCreatorChannelId}`);
+      const forceSuffix = forceReportRefresh.current ? "?force=true" : "";
+      forceReportRefresh.current = false;
+      const res = await apiFetch(`/strategy/report/${demoCreatorChannelId}${forceSuffix}`);
       if (!res.ok) throw new Error("Failed to load strategy report");
       return res.json();
     },
   });
 
   const postingQuery = useQuery<PostingStrategy>({
-    queryKey: ["posting-strategy", demoCreatorChannelId],
+    queryKey: ["posting-strategy", demoCreatorChannelId, refreshVersion],
     queryFn: async () => {
-      const res = await apiFetch(`/strategy/posting/${demoCreatorChannelId}`);
+      const forceSuffix = forcePostingRefresh.current ? "?force=true" : "";
+      forcePostingRefresh.current = false;
+      const res = await apiFetch(`/strategy/posting/${demoCreatorChannelId}${forceSuffix}`);
       if (!res.ok) throw new Error("Failed to load posting strategy");
       return res.json();
+    },
+  });
+  useAnalysisRefreshShortcut({
+    label: "strategy report",
+    onRefresh: () => {
+      forceReportRefresh.current = true;
+      forcePostingRefresh.current = true;
+      setRefreshVersion((value) => value + 1);
     },
   });
 
   if (reportQuery.isLoading || postingQuery.isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <AnalysisLoader
+        className="min-h-[56vh]"
+        eyebrow="Strategy Engine"
+        title="Building a channel roadmap from live market evidence"
+        subtitle="We are consolidating competitor patterns, audience asks, posting cadence, and packaging winners into a single strategy brief."
+        steps={[
+          "Collecting matched competitor snapshots",
+          "Comparing niche share and audience-fit gaps",
+          "Scoring title and thumbnail signals",
+          "Drafting the 30 / 60 / 90 day plan",
+        ]}
+      />
     );
   }
 
@@ -91,6 +137,13 @@ export default function StrategyReportPage() {
 
   const report = reportQuery.data;
   const posting = postingQuery.data;
+  const recommendations = report.nicheRecommendations.length
+    ? report.nicheRecommendations
+    : report.suggestedMix.map((row) => ({
+        niche: row.name,
+        change: "0%",
+        reason: "Suggested from the current strategy mix because competitor niche distribution was incomplete.",
+      }));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -105,48 +158,28 @@ export default function StrategyReportPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
-        <div className="stat-card">
+        <div className="stat-card min-h-[30rem]">
           <h3 className="section-header">Niche Mix: Current vs Suggested</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="mb-2 text-xs text-muted-foreground">CURRENT</p>
-              <div className="flex h-8 overflow-hidden rounded-lg">
-                {report.currentMix.map((row, index) => (
-                  <div
-                    key={row.name}
-                    className={`${mixColors[index % mixColors.length]} flex items-center justify-center`}
-                    style={{ width: `${row.share}%` }}
-                  >
-                    {row.share > 9 && <span className="text-[10px] text-primary-foreground">{row.share}%</span>}
-                  </div>
-                ))}
-              </div>
+              <MixBar rows={report.currentMix} />
             </div>
             <div>
               <p className="mb-2 text-xs text-muted-foreground">SUGGESTED</p>
-              <div className="flex h-8 overflow-hidden rounded-lg">
-                {report.suggestedMix.map((row, index) => (
-                  <div
-                    key={row.name}
-                    className={`${mixColors[index % mixColors.length]} flex items-center justify-center`}
-                    style={{ width: `${row.share}%` }}
-                  >
-                    {row.share > 9 && <span className="text-[10px] text-primary-foreground">{row.share}%</span>}
-                  </div>
-                ))}
-              </div>
+              <MixBar rows={report.suggestedMix} />
             </div>
           </div>
-          <div className="mt-4 space-y-2">
-            {report.nicheRecommendations.map((item) => (
-              <div key={item.niche} className="rounded-lg border border-border/60 bg-accent/20 px-3 py-3">
+          <div className="mt-5 space-y-3">
+            {recommendations.map((item) => (
+              <div key={item.niche} className="rounded-xl border border-border/60 bg-accent/18 px-4 py-3">
                 <div className="flex items-start gap-3">
-                  <span className={`w-12 shrink-0 text-sm font-semibold ${item.change.startsWith("+") ? "text-success" : "text-destructive"}`}>
+                  <span className={`w-12 shrink-0 pt-0.5 text-sm font-semibold ${item.change.startsWith("+") ? "text-success" : "text-destructive"}`}>
                     {item.change}
                   </span>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">{item.niche}</p>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.reason}</p>
+                    <p className="mt-1 text-xs leading-6 text-muted-foreground">{item.reason}</p>
                   </div>
                 </div>
               </div>
@@ -154,7 +187,7 @@ export default function StrategyReportPage() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card min-h-[30rem]">
           <h3 className="section-header">Posting Strategy</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg bg-accent/30 p-3">
@@ -171,7 +204,7 @@ export default function StrategyReportPage() {
               <p className="mt-2 text-xs leading-5 text-muted-foreground">{posting.shortsRecommendation}</p>
             </div>
           </div>
-          <div className="mt-4">
+          <div className="mt-5">
             <p className="mb-2 text-xs text-muted-foreground">Weekly Calendar</p>
             <div className="grid gap-2">
               {posting.weeklyCalendar.map((slot) => (
@@ -185,79 +218,97 @@ export default function StrategyReportPage() {
         </div>
       </div>
 
-      {[report.roadmap.phase1, report.roadmap.phase2, report.roadmap.phase3].map((phase) => (
-        <div key={phase.title} className="stat-card">
-          <h3 className="section-header">{phase.title}</h3>
-          <div className="space-y-3">
-            {phase.actions.map((action, index) => (
-              <div key={action} className="flex items-start gap-3 rounded-lg bg-accent/20 px-3 py-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
-                  {index + 1}
-                </span>
-                <p className="text-sm leading-6 text-foreground">{action}</p>
-              </div>
-            ))}
+      <div className="grid gap-6 xl:grid-cols-3">
+        {[report.roadmap.phase1, report.roadmap.phase2, report.roadmap.phase3].map((phase) => (
+          <div key={phase.title} className="stat-card">
+            <h3 className="section-header">{phase.title}</h3>
+            <div className="space-y-3">
+              {phase.actions.map((action, index) => (
+                <div key={action} className="flex items-start gap-3 rounded-lg bg-accent/20 px-3 py-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+                    {index + 1}
+                  </span>
+                  <p className="text-sm leading-6 text-foreground">{action}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="stat-card">
           <h3 className="section-header">Title Plays</h3>
-          <div className="space-y-2">
-            {report.supportingSignals.titlePlays.map((item) => (
-              <div key={item} className="rounded-lg bg-accent/20 px-3 py-3 text-sm text-foreground">
-                {item}
-              </div>
-            ))}
-          </div>
+          {report.supportingSignals.titlePlays.length ? (
+            <div className="space-y-2">
+              {report.supportingSignals.titlePlays.map((item) => (
+                <div key={item} className="rounded-lg bg-accent/20 px-3 py-3 text-sm text-foreground">
+                  {item}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No title signal could be derived from the current market set.</p>
+          )}
         </div>
 
         <div className="stat-card">
           <h3 className="section-header">Thumbnail Plays</h3>
-          <div className="space-y-2">
-            {report.supportingSignals.thumbnailPlays.map((item) => (
-              <div key={item} className="rounded-lg bg-accent/20 px-3 py-3 text-sm text-foreground">
-                {item}
-              </div>
-            ))}
-          </div>
+          {report.supportingSignals.thumbnailPlays.length ? (
+            <div className="space-y-2">
+              {report.supportingSignals.thumbnailPlays.map((item) => (
+                <div key={item} className="rounded-lg bg-accent/20 px-3 py-3 text-sm text-foreground">
+                  {item}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No thumbnail signal could be derived from the current market set.</p>
+          )}
         </div>
 
         <div className="stat-card">
           <h3 className="section-header">Audience Demand</h3>
-          <div className="flex flex-wrap gap-2">
-            {report.supportingSignals.viewerAsks.map((item) => (
-              <span key={item} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">
-                {item}
-              </span>
-            ))}
-          </div>
+          {report.supportingSignals.viewerAsks.length ? (
+            <div className="flex flex-wrap gap-2">
+              {report.supportingSignals.viewerAsks.map((item) => (
+                <span key={item} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">
+                  {item}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No recurring audience demand phrases were extracted from public comments.</p>
+          )}
         </div>
       </div>
 
       <div className="stat-card overflow-x-auto">
         <h3 className="section-header">Market Leaders</h3>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-muted-foreground">
-              <th className="pb-2 font-medium">Channel</th>
-              <th className="pb-2 font-medium text-right">Top Niche</th>
-              <th className="pb-2 font-medium text-right">Avg Views</th>
-              <th className="pb-2 font-medium text-right">Audience Fit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {report.supportingSignals.marketLeaders.map((leader) => (
-              <tr key={leader.name} className="border-b border-border/50 last:border-0">
-                <td className="py-2 font-medium text-foreground">{leader.name}</td>
-                <td className="text-right text-muted-foreground">{leader.topNiche}</td>
-                <td className="text-right text-foreground">{leader.avgViews.toLocaleString()}</td>
-                <td className="text-right text-primary">{Math.round(leader.audienceFitScore)}%</td>
+        {report.supportingSignals.marketLeaders.length ? (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="pb-2 font-medium">Channel</th>
+                <th className="pb-2 font-medium text-right">Top Niche</th>
+                <th className="pb-2 font-medium text-right">Avg Views</th>
+                <th className="pb-2 font-medium text-right">Audience Fit</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {report.supportingSignals.marketLeaders.map((leader) => (
+                <tr key={leader.name} className="border-b border-border/50 last:border-0">
+                  <td className="py-2 font-medium text-foreground">{leader.name}</td>
+                  <td className="text-right text-muted-foreground">{leader.topNiche}</td>
+                  <td className="text-right text-foreground">{leader.avgViews.toLocaleString()}</td>
+                  <td className="text-right text-primary">{Math.round(leader.audienceFitScore)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-sm text-muted-foreground">No market leaders could be derived from the current competitor set.</p>
+        )}
       </div>
     </div>
   );

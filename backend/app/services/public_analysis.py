@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 from collections import Counter, defaultdict
@@ -12,6 +13,7 @@ from langdetect import LangDetectException, detect_langs
 
 from app.data.demo_creator import DEMO_CREATOR
 from app.pipeline.sentiment import SentimentAnalyzer
+from app.services.analysis_cache import analysis_cache
 from app.services.youtube.data_api import YouTubeDataAPI
 
 STOPWORDS = {
@@ -93,6 +95,7 @@ class PublicCompetitorAnalysisService:
         self.sentiment = SentimentAnalyzer()
         self._detail_cache: dict[str, dict] = {}
         self._discover_cache: dict[str, dict] = {}
+        self.logger = logging.getLogger(__name__)
 
     def _creator(self, channel_id: str) -> dict:
         if channel_id != DEMO_CREATOR["channel_id"]:
@@ -375,9 +378,15 @@ class PublicCompetitorAnalysisService:
             f"keyword overlap {round(similarity['keyword_density_overlap'])}%."
         )
 
-    async def _load_channel_detail(self, channel_id: str, creator: dict) -> dict:
-        if channel_id in self._detail_cache:
+    async def _load_channel_detail(self, channel_id: str, creator: dict, force: bool = False) -> dict:
+        cache_key = f"competitors:detail:{creator['channel_id']}:{channel_id}"
+        if not force and channel_id in self._detail_cache:
             return self._detail_cache[channel_id]
+        if not force:
+            cached = await analysis_cache.get(cache_key)
+            if cached is not None:
+                self._detail_cache[channel_id] = cached
+                return cached
 
         channel = await self.youtube.get_channel(channel_id)
         if not channel:
@@ -545,12 +554,19 @@ class PublicCompetitorAnalysisService:
         )
 
         self._detail_cache[channel_id] = detail
+        await analysis_cache.set(cache_key, detail)
         return detail
 
-    async def discover(self, channel_id: str) -> dict:
+    async def discover(self, channel_id: str, force: bool = False) -> dict:
         creator = self._creator(channel_id)
-        if channel_id in self._discover_cache:
+        cache_key = f"competitors:discover:{channel_id}"
+        if not force and channel_id in self._discover_cache:
             return self._discover_cache[channel_id]
+        if not force:
+            cached = await analysis_cache.get(cache_key)
+            if cached is not None:
+                self._discover_cache[channel_id] = cached
+                return cached
 
         candidate_ids: list[str] = []
         seen = set()
@@ -575,7 +591,7 @@ class PublicCompetitorAnalysisService:
         details = []
         for channel in filtered[:10]:
             try:
-                details.append(await self._load_channel_detail(channel["id"], creator))
+                details.append(await self._load_channel_detail(channel["id"], creator, force=force))
             except Exception:
                 continue
 
@@ -619,8 +635,24 @@ class PublicCompetitorAnalysisService:
             ],
         }
         self._discover_cache[channel_id] = discovery
+        await analysis_cache.set(cache_key, discovery)
         return discovery
 
-    async def competitor_detail(self, competitor_id: str, creator_id: str = DEMO_CREATOR["channel_id"]) -> dict:
+    async def search_videos(self, query: str, max_results: int = 5, force: bool = False) -> list[dict]:
+        """Directly search YouTube for videos matching the query."""
+        cache_key = f"search:videos:{slugify(query)[:50]}:{max_results}"
+        # We purposely ignore the `force` flag here because search.list costs 100 API units.
+        cached = await analysis_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        results = await self.youtube.search_videos(query, max_results=max_results)
+
+        if results:
+            await analysis_cache.set(cache_key, results)
+
+        return results
+
+    async def competitor_detail(self, competitor_id: str, creator_id: str = DEMO_CREATOR["channel_id"], force: bool = False) -> dict:
         creator = self._creator(creator_id)
-        return await self._load_channel_detail(competitor_id, creator)
+        return await self._load_channel_detail(competitor_id, creator, force=force)

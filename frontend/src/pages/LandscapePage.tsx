@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import { channelStats, formatNumber } from "@/data/mockData";
 import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { demoCreatorChannelId } from "@/lib/demo";
+import { useAnalysisRefreshShortcut } from "@/hooks/useAnalysisRefreshShortcut";
 
 interface CompetitorCard {
   id: string;
@@ -15,12 +17,23 @@ interface CompetitorCard {
 
 export default function LandscapePage() {
   const navigate = useNavigate();
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const forceNextRefresh = useRef(false);
   const { data, isLoading, error } = useQuery<{ competitors: CompetitorCard[] }>({
-    queryKey: ["competitor_landscape", demoCreatorChannelId],
+    queryKey: ["competitor_landscape", demoCreatorChannelId, refreshVersion],
     queryFn: async () => {
-      const res = await apiFetch(`/competitors/landscape/${demoCreatorChannelId}`);
+      const forceSuffix = forceNextRefresh.current ? "?force=true" : "";
+      forceNextRefresh.current = false;
+      const res = await apiFetch(`/competitors/landscape/${demoCreatorChannelId}${forceSuffix}`);
       if (!res.ok) throw new Error("Failed to load landscape");
       return res.json();
+    },
+  });
+  useAnalysisRefreshShortcut({
+    label: "landscape analysis",
+    onRefresh: () => {
+      forceNextRefresh.current = true;
+      setRefreshVersion((value) => value + 1);
     },
   });
 
