@@ -1,39 +1,88 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { competitors, channelStats, niches, formatNumber } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { channelStats, niches, formatNumber } from "@/data/mockData";
 import StatStrip from "@/components/shared/StatStrip";
 import SentimentBar from "@/components/shared/SentimentBar";
 import TagCloud from "@/components/shared/TagCloud";
-import { ArrowLeft, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { apiFetch } from "@/lib/api";
+import { findCreatorNiche, findCreatorVideoMatch } from "@/lib/creatorDerived";
 
-const tabs = ["Overview", "Content Similarity", "Similar Videos", "Thumbnails", "Viral Patterns", "Engagement"] as const;
+const tabs = ["Overview", "Content Similarity", "Similar Videos", "Viral Patterns", "Engagement"] as const;
+
+interface CompetitorVideo {
+  id: string;
+  title: string;
+  views: number;
+  duration: string;
+  publishDate: string;
+  nicheId: string;
+  nicheName: string;
+  thumbnailUrl: string;
+}
+
+interface CompetitorDetail {
+  id: string;
+  name: string;
+  handle: string;
+  thumbnailUrl: string;
+  subscribers: number;
+  avgViews: number;
+  engagementRate: number;
+  uploadFrequency: string;
+  topNiche: string;
+  similarityScore: number;
+  healthScore: number;
+  nicheDistribution: { nicheId: string; name: string; share: number; avgViews: number }[];
+  sharedNiches: string[];
+  exclusiveNiches: string[];
+  videos: CompetitorVideo[];
+  viralVideos: { id: string; title: string; views: number; duration: string; publishDate: string; thumbnailUrl: string }[];
+  engagementTrend: { month: string; rate: number }[];
+  commentSentiment: { positive: number; neutral: number; critical: number };
+  viewerAsks: string[];
+  similarity: {
+    overall: number;
+    niche_overlap: number;
+    title_formula_overlap: number;
+    keyword_density_overlap: number;
+    subscriber_proximity: number;
+    audience_fit: number;
+  };
+  patternSummary: string;
+}
 
 export default function CompetitorDetailPage() {
   const { competitorId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>("Overview");
-  const comp = competitors.find((c) => c.id === competitorId);
+  const { data: comp, isLoading, error } = useQuery<CompetitorDetail>({
+    queryKey: ["competitor_detail", competitorId],
+    queryFn: async () => {
+      const res = await apiFetch(`/competitors/${competitorId}/overview`);
+      if (!res.ok) throw new Error("Failed to load competitor details");
+      return res.json();
+    },
+    enabled: !!competitorId,
+  });
 
-  if (!comp) return <div className="p-6 text-foreground">Competitor not found</div>;
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !comp) return <div className="p-6 text-foreground">Competitor not found</div>;
 
   const delta = (yours: number, theirs: number) => {
     const diff = yours - theirs;
     const pct = theirs !== 0 ? ((diff / theirs) * 100).toFixed(0) : "—";
     return { diff, pct, positive: diff > 0 };
   };
-
-  const engDelta = delta(channelStats.engagementRate, comp.engagementRate);
-  const viewDelta = delta(channelStats.avgViews, comp.avgViews);
-
-  // Content similarity scores (mock)
-  const similarityBreakdown = {
-    nicheOverlap: Math.min(comp.sharedNiches.length / niches.length * 100, 100),
-    titleFormula: 65 + Math.random() * 20,
-    thumbnailStyle: 45 + Math.random() * 30,
-    audienceOverlap: comp.similarityScore * 0.9,
-  };
-  const overallSimilarity = Math.round((similarityBreakdown.nicheOverlap + similarityBreakdown.titleFormula + similarityBreakdown.thumbnailStyle + similarityBreakdown.audienceOverlap) / 4);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -125,13 +174,14 @@ export default function CompetitorDetailPage() {
       {activeTab === "Content Similarity" && (
         <div className="space-y-6 animate-fade-in">
           <div className="stat-card">
-            <h3 className="section-header">Overall Similarity: {overallSimilarity}/100</h3>
+            <h3 className="section-header">Overall Similarity: {Math.round(comp.similarity.overall)}/100</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: "Niche Overlap", value: Math.round(similarityBreakdown.nicheOverlap) },
-                { label: "Title Formula", value: Math.round(similarityBreakdown.titleFormula) },
-                { label: "Thumbnail Style", value: Math.round(similarityBreakdown.thumbnailStyle) },
-                { label: "Audience Overlap", value: Math.round(similarityBreakdown.audienceOverlap) },
+                { label: "Niche Overlap", value: Math.round(comp.similarity.niche_overlap) },
+                { label: "Title Formula", value: Math.round(comp.similarity.title_formula_overlap) },
+                { label: "Keyword Overlap", value: Math.round(comp.similarity.keyword_density_overlap) },
+                { label: "Audience Fit", value: Math.round(comp.similarity.audience_fit) },
+                { label: "Sub Proximity", value: Math.round(comp.similarity.subscriber_proximity) },
               ].map((s) => (
                 <div key={s.label} className="bg-accent/50 rounded-lg p-3 text-center">
                   <p className="text-xl font-bold text-foreground">{s.value}</p>
@@ -145,7 +195,7 @@ export default function CompetitorDetailPage() {
             <div className="stat-card">
               <h3 className="section-header">Shared Niches</h3>
               {comp.sharedNiches.map((sn) => {
-                const yourNiche = niches.find((n) => n.name === sn);
+                const yourNiche = findCreatorNiche({ nicheName: sn });
                 const theirNiche = comp.nicheDistribution.find((n) => n.name === sn);
                 return (
                   <div key={sn} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
@@ -181,8 +231,11 @@ export default function CompetitorDetailPage() {
             <h3 className="section-header">Their Top Videos vs Yours</h3>
             <div className="space-y-4">
               {comp.videos.map((cv) => {
-                const matchingNiche = niches.find((n) => n.id === cv.nicheId);
-                const yourMatch = matchingNiche?.topVideos[0];
+                const yourMatch = findCreatorVideoMatch({
+                  nicheId: cv.nicheId,
+                  nicheName: cv.nicheName,
+                  title: cv.title,
+                });
                 return (
                   <div key={cv.id} className="bg-accent/30 rounded-lg p-3">
                     <div className="grid grid-cols-2 gap-4">
@@ -211,45 +264,6 @@ export default function CompetitorDetailPage() {
         </div>
       )}
 
-      {/* Thumbnails */}
-      {activeTab === "Thumbnails" && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="stat-card">
-            <h3 className="section-header">Thumbnail Style Comparison</h3>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-xs text-primary mb-3">YOU (TechForge)</p>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Face present</span><span className="text-foreground">48%</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Bold text</span><span className="text-foreground">79%</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Avg words</span><span className="text-foreground">3.2</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Complexity</span><span className="text-foreground">Clean</span></div>
-                  <div className="flex gap-1 mt-2">
-                    {["#e53935", "#1a1a1a", "#ffffff"].map((c) => (
-                      <div key={c} className="w-6 h-6 rounded border border-border" style={{ backgroundColor: c }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-info mb-3">{comp.name}</p>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Face present</span><span className="text-foreground">{comp.thumbnailStyle.facePresent}%</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Bold text</span><span className="text-foreground">{comp.thumbnailStyle.boldText}%</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Avg words</span><span className="text-foreground">{comp.thumbnailStyle.avgWordCount}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Complexity</span><span className="text-foreground capitalize">{comp.thumbnailStyle.backgroundComplexity}</span></div>
-                  <div className="flex gap-1 mt-2">
-                    {comp.thumbnailStyle.dominantColors.map((c) => (
-                      <div key={c} className="w-6 h-6 rounded border border-border" style={{ backgroundColor: c }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Viral Patterns */}
       {activeTab === "Viral Patterns" && (
         <div className="space-y-6 animate-fade-in">
@@ -259,7 +273,11 @@ export default function CompetitorDetailPage() {
               {comp.viralVideos.map((v) => (
                 <div key={v.id} className="bg-accent/50 rounded-lg p-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: v.thumbnailColor }} />
+                    {v.thumbnailUrl ? (
+                      <img src={v.thumbnailUrl} alt={v.title} className="w-12 h-12 rounded-md object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-md bg-accent" />
+                    )}
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">{v.title}</p>
                       <p className="text-xs text-muted-foreground">{v.publishDate} · {v.duration}</p>
@@ -276,11 +294,7 @@ export default function CompetitorDetailPage() {
 
           <div className="stat-card">
             <h3 className="section-header">Pattern Summary</h3>
-            <p className="text-sm text-muted-foreground">
-              {comp.name}'s viral content tends to be longer-form ({comp.viralVideos[0]?.duration || "20+ min"}) tutorials and guides 
-              posted on weekdays. Titles use strong hooks with specific outcomes or comparisons. 
-              Thumbnail style leans {comp.thumbnailStyle.backgroundComplexity} with {comp.thumbnailStyle.facePresent > 50 ? "face presence" : "product-focused imagery"}.
-            </p>
+            <p className="text-sm text-muted-foreground">{comp.patternSummary}</p>
           </div>
         </div>
       )}
@@ -303,13 +317,16 @@ export default function CompetitorDetailPage() {
           <div className="stat-card">
             <h3 className="section-header">Comment Sentiment</h3>
             <SentimentBar {...comp.commentSentiment} />
+            <p className="text-xs text-muted-foreground mt-3">
+              Estimated from sampled public comments on recent high-comment videos.
+            </p>
           </div>
 
           <div className="stat-card">
-            <h3 className="section-header">What Their Audience Asks For</h3>
+            <h3 className="section-header">What Their Public Commenters Ask For</h3>
             <TagCloud tags={comp.viewerAsks} />
             <p className="text-xs text-muted-foreground mt-3">
-              These are potential content gaps you could fill — topics their audience wants that you may already have expertise in.
+              Estimated from question-style public comments and repeated request phrases, not private channel analytics.
             </p>
           </div>
         </div>

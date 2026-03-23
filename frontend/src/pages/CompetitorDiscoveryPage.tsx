@@ -1,16 +1,59 @@
 import { useNavigate } from "react-router-dom";
-import { competitors, channelStats, formatNumber } from "@/data/mockData";
-import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, ZAxis } from "recharts";
+import { useQuery } from "@tanstack/react-query";
+import { channelStats, formatNumber } from "@/data/mockData";
+import { Loader2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import { demoCreatorChannelId } from "@/lib/demo";
+
+interface CompetitorCard {
+  id: string;
+  name: string;
+  handle: string;
+  thumbnailUrl?: string;
+  subscribers: number;
+  avgViews: number;
+  engagementRate: number;
+  uploadFrequency: string;
+  topNiche: string;
+  similarityScore: number;
+  audienceFitScore: number;
+  discoveryReason: string;
+  nicheMatchTags: string[];
+}
 
 export default function CompetitorDiscoveryPage() {
   const navigate = useNavigate();
+  const { data, isLoading, error } = useQuery<{ competitors: CompetitorCard[] }>({
+    queryKey: ["competitors", demoCreatorChannelId],
+    queryFn: async () => {
+      const res = await apiFetch(`/competitors/discover/${demoCreatorChannelId}`);
+      if (!res.ok) throw new Error("Failed to discover competitors");
+      return res.json();
+    },
+  });
+
+  const competitors = data?.competitors || [];
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Competitor Discovery</h1>
-        <p className="text-sm text-muted-foreground mt-1">Auto-discovered competitors based on niche overlap and audience behavior</p>
+        <p className="text-sm text-muted-foreground mt-1">Real public-channel discovery filtered by topical overlap, reach, and estimated audience fit</p>
       </div>
+
+      {error && (
+        <div className="stat-card border border-destructive/30 bg-destructive/10">
+          <p className="text-sm text-destructive">Could not load real competitor data.</p>
+        </div>
+      )}
 
       {/* Top competitors list */}
       <div className="stat-card">
@@ -22,9 +65,13 @@ export default function CompetitorDiscoveryPage() {
               onClick={() => navigate(`/competitors/${c.id}`)}
               className="flex items-center gap-4 p-3 rounded-lg bg-accent/30 hover:bg-accent/60 cursor-pointer transition-colors"
             >
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                <span className="text-sm font-bold text-primary">{c.name[0]}</span>
-              </div>
+              {c.thumbnailUrl ? (
+                <img src={c.thumbnailUrl} alt={c.name} className="w-10 h-10 rounded-full shrink-0 object-cover" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-primary">{c.name[0]}</span>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-foreground">{c.name}</p>
@@ -35,6 +82,9 @@ export default function CompetitorDiscoveryPage() {
                   {c.nicheMatchTags.map((tag) => (
                     <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-accent text-muted-foreground">{tag}</span>
                   ))}
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                    Audience fit {Math.round(c.audienceFitScore)}%
+                  </span>
                 </div>
               </div>
               <div className="text-right shrink-0">
@@ -64,6 +114,7 @@ export default function CompetitorDiscoveryPage() {
               <th className="pb-2 font-medium text-right">Eng. Rate</th>
               <th className="pb-2 font-medium text-right">Upload Freq</th>
               <th className="pb-2 font-medium text-right">Top Niche</th>
+              <th className="pb-2 font-medium text-right">Audience Fit</th>
               <th className="pb-2 font-medium text-right">Similarity</th>
             </tr>
           </thead>
@@ -75,6 +126,7 @@ export default function CompetitorDiscoveryPage() {
               <td className="text-right text-foreground">{channelStats.engagementRate}%</td>
               <td className="text-right text-muted-foreground">{channelStats.uploadFrequency}</td>
               <td className="text-right text-muted-foreground">Linux & OS</td>
+              <td className="text-right text-primary">—</td>
               <td className="text-right text-primary">—</td>
             </tr>
             {competitors.map((c) => (
@@ -89,6 +141,7 @@ export default function CompetitorDiscoveryPage() {
                 <td className="text-right text-foreground">{c.engagementRate}%</td>
                 <td className="text-right text-muted-foreground">{c.uploadFrequency}</td>
                 <td className="text-right text-muted-foreground">{c.topNiche}</td>
+                <td className="text-right text-foreground">{Math.round(c.audienceFitScore)}%</td>
                 <td className="text-right">
                   <span className="text-primary font-medium">{c.similarityScore}%</span>
                 </td>

@@ -1,9 +1,30 @@
 import { useNavigate } from "react-router-dom";
-import { competitors, channelStats, formatNumber } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { channelStats, formatNumber } from "@/data/mockData";
 import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { Loader2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import { demoCreatorChannelId } from "@/lib/demo";
+
+interface CompetitorCard {
+  id: string;
+  name: string;
+  subscribers: number;
+  engagementRate: number;
+}
 
 export default function LandscapePage() {
   const navigate = useNavigate();
+  const { data, isLoading, error } = useQuery<{ competitors: CompetitorCard[] }>({
+    queryKey: ["competitor_landscape", demoCreatorChannelId],
+    queryFn: async () => {
+      const res = await apiFetch(`/competitors/landscape/${demoCreatorChannelId}`);
+      if (!res.ok) throw new Error("Failed to load landscape");
+      return res.json();
+    },
+  });
+
+  const competitors = data?.competitors || [];
 
   const scatterData = [
     { name: "You (TechForge)", subs: channelStats.subscribers, engagement: channelStats.engagementRate, isYou: true, id: "you" },
@@ -20,12 +41,26 @@ export default function LandscapePage() {
     return "Fringe";
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Competitive Landscape</h1>
         <p className="text-sm text-muted-foreground mt-1">Subscriber count vs engagement rate positioning</p>
       </div>
+
+      {error && (
+        <div className="stat-card border border-destructive/30 bg-destructive/10">
+          <p className="text-sm text-destructive">Could not load real competitor landscape.</p>
+        </div>
+      )}
 
       <div className="stat-card">
         <h3 className="section-header">Landscape Map</h3>

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
+import { demoUser, isDemoMode } from "@/lib/demo";
 
 interface User {
     id: string;
@@ -16,14 +17,15 @@ export const useAuth = () => {
             if (!res.ok) throw new Error("Failed to fetch user");
             return res.json();
         },
+        enabled: !isDemoMode,
         // Don't retry on 401/403
         retry: false,
     });
 
     return {
-        user: data?.user || null,
-        isLoading,
-        error,
+        user: isDemoMode ? demoUser : data?.user || null,
+        isLoading: isDemoMode ? false : isLoading,
+        error: isDemoMode ? null : error,
         refetch,
     };
 };
