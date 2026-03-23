@@ -7,7 +7,7 @@ import { Eye, TrendingUp, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { isDemoMode } from "@/lib/demo";
+import { creatorDataSourceLabel, isDemoMode } from "@/lib/demo";
 
 export default function OverviewPage() {
   const navigate = useNavigate();
@@ -46,7 +46,8 @@ export default function OverviewPage() {
         <div className="p-4 stat-card bg-primary/5 border border-primary/20">
           <h3 className="text-sm font-semibold text-primary mb-2">Demo Mode</h3>
           <p className="text-xs text-muted-foreground">
-            Core analysis screens are using the built-in mock dataset. Google login and owner-only YouTube Analytics are bypassed.
+            {creatorDataSourceLabel} is active because <code>VITE_DEMO_MODE=true</code>. Channel analysis uses the built-in mock
+            dataset, while competitor analysis remains live and public-data-driven.
           </p>
         </div>
       )}

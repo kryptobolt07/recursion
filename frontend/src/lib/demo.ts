@@ -1,6 +1,9 @@
 import { channelStats } from "@/data/mockData";
 
-export const isDemoMode = import.meta.env.VITE_DEMO_MODE !== "false";
+const parseBooleanEnv = (value: string | undefined) => value?.toLowerCase() === "true";
+
+export const isDemoMode = parseBooleanEnv(import.meta.env.VITE_DEMO_MODE);
+export const creatorDataSourceLabel = isDemoMode ? "Mock creator channel" : "Live creator channel";
 export const demoCreatorChannelId = "demo-techforge";
 
 export const demoUser = {

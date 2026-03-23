@@ -2,7 +2,7 @@ import { LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { apiBaseUrl } from "@/lib/api";
-import { isDemoMode } from "@/lib/demo";
+import { creatorDataSourceLabel, isDemoMode } from "@/lib/demo";
 
 const LoginPage = () => {
     const handleLogin = () => {
@@ -42,7 +42,7 @@ const LoginPage = () => {
 
                 <p className="px-8 text-center text-sm text-muted-foreground">
                     {isDemoMode
-                        ? "Demo mode is active. Core product flows use the built-in mock dataset so you can present competitor discovery and strategy screens without OAuth."
+                        ? `${creatorDataSourceLabel} is enabled via VITE_DEMO_MODE=true. OAuth is skipped for the creator side, while competitor research stays live.`
                         : "By clicking continue, you agree to our Terms of Service and Privacy Policy. We only ask for read-only access to your YouTube Analytics."}
                 </p>
             </div>
