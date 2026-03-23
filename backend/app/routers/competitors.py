@@ -3,9 +3,11 @@
 from fastapi import APIRouter, HTTPException
 
 from app.services.public_analysis import PublicCompetitorAnalysisService
+from app.services.thumbnail_analysis import ThumbnailAnalysisService
 
 router = APIRouter()
 service = PublicCompetitorAnalysisService()
+thumbnail_service = ThumbnailAnalysisService()
 
 
 @router.get("/discover/{channel_id}")
@@ -58,10 +60,15 @@ async def competitor_similar_videos(competitor_id: str):
 @router.get("/{competitor_id}/thumbnails")
 async def competitor_thumbnails(competitor_id: str):
     """§2.2 Thumbnail Analysis — side-by-side style comparison."""
-    return {
-        "available": False,
-        "message": "Real thumbnail analysis is not implemented yet. No mock values are returned.",
-    }
+    try:
+        detail = await service.competitor_detail(competitor_id)
+        reference_videos = [*detail["viralVideos"], *detail["videos"]][:6]
+        analysis = await thumbnail_service.analyze_video_set(reference_videos)
+        if not analysis.get("available"):
+            return {"available": False, "message": "Could not analyze public thumbnails for this competitor."}
+        return analysis
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @router.get("/{competitor_id}/viral")

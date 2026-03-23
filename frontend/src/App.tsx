@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +23,18 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
+const LegacyAppRedirect = () => {
+  const location = useLocation();
+
+  return <Navigate to={`/app${location.pathname}${location.search}${location.hash}`} replace />;
+};
+
+const LegacyParamRedirect = ({ buildPath }: { buildPath: (params: Readonly<Record<string, string | undefined>>) => string }) => {
+  const params = useParams();
+
+  return <Navigate to={buildPath(params)} replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -32,6 +44,18 @@ const App = () => (
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="/views" element={<LegacyAppRedirect />} />
+          <Route path="/content-dna" element={<LegacyAppRedirect />} />
+          <Route path="/cadence" element={<LegacyAppRedirect />} />
+          <Route path="/audience" element={<LegacyAppRedirect />} />
+          <Route path="/competitors" element={<LegacyAppRedirect />} />
+          <Route path="/competitors/landscape" element={<LegacyAppRedirect />} />
+          <Route path="/strategy" element={<LegacyAppRedirect />} />
+          <Route path="/strategy/ideas" element={<LegacyAppRedirect />} />
+          <Route path="/strategy/titles" element={<LegacyAppRedirect />} />
+          <Route path="/strategy/thumbnails" element={<LegacyAppRedirect />} />
+          <Route path="/niche/:nicheId" element={<LegacyParamRedirect buildPath={(params) => `/app/niche/${params.nicheId ?? ""}`} />} />
+          <Route path="/competitors/:competitorId" element={<LegacyParamRedirect buildPath={(params) => `/app/competitors/${params.competitorId ?? ""}`} />} />
 
           <Route path="/app" element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>

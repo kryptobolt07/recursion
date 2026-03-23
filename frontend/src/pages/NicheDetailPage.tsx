@@ -22,7 +22,7 @@ export default function NicheDetailPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-accent transition-colors">
+        <button onClick={() => navigate("/app")} className="p-1.5 rounded-md hover:bg-accent transition-colors">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </button>
         <div>

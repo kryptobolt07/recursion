@@ -10,7 +10,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { apiFetch } from "@/lib/api";
 import { findCreatorNiche, findCreatorVideoMatch } from "@/lib/creatorDerived";
 
-const tabs = ["Overview", "Content Similarity", "Similar Videos", "Viral Patterns", "Engagement"] as const;
+const tabs = ["Overview", "Content Similarity", "Similar Videos", "Thumbnail Analysis", "Viral Patterns", "Engagement"] as const;
 
 interface CompetitorVideo {
   id: string;
@@ -54,6 +54,18 @@ interface CompetitorDetail {
   patternSummary: string;
 }
 
+interface CompetitorThumbnailAnalysis {
+  available: boolean;
+  facePresencePct: number;
+  avgWordCount: number;
+  dominantColors: string[];
+  topOverlayWords: string[];
+  averageBrightness: number;
+  averageEdgeDensity: number;
+  compositionBias: string;
+  referenceVideos: { id: string; title: string; thumbnailUrl: string; views: number }[];
+}
+
 export default function CompetitorDetailPage() {
   const { competitorId } = useParams();
   const navigate = useNavigate();
@@ -63,6 +75,15 @@ export default function CompetitorDetailPage() {
     queryFn: async () => {
       const res = await apiFetch(`/competitors/${competitorId}/overview`);
       if (!res.ok) throw new Error("Failed to load competitor details");
+      return res.json();
+    },
+    enabled: !!competitorId,
+  });
+  const { data: thumbnailAnalysis } = useQuery<CompetitorThumbnailAnalysis>({
+    queryKey: ["competitor_thumbnail_analysis", competitorId],
+    queryFn: async () => {
+      const res = await apiFetch(`/competitors/${competitorId}/thumbnails`);
+      if (!res.ok) throw new Error("Failed to load thumbnail analysis");
       return res.json();
     },
     enabled: !!competitorId,
@@ -87,7 +108,7 @@ export default function CompetitorDetailPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate("/competitors")} className="p-1.5 rounded-md hover:bg-accent transition-colors">
+        <button onClick={() => navigate("/app/competitors")} className="p-1.5 rounded-md hover:bg-accent transition-colors">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </button>
         <div>
@@ -261,6 +282,84 @@ export default function CompetitorDetailPage() {
               })}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Viral Patterns */}
+      {activeTab === "Thumbnail Analysis" && (
+        <div className="space-y-6 animate-fade-in">
+          {thumbnailAnalysis?.available ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="stat-card text-center">
+                  <p className="stat-value">{thumbnailAnalysis.facePresencePct}%</p>
+                  <p className="stat-label">Face Presence</p>
+                </div>
+                <div className="stat-card text-center">
+                  <p className="stat-value">{thumbnailAnalysis.avgWordCount}</p>
+                  <p className="stat-label">Avg OCR Words</p>
+                </div>
+                <div className="stat-card text-center">
+                  <p className="stat-value">{thumbnailAnalysis.averageBrightness}%</p>
+                  <p className="stat-label">Brightness</p>
+                </div>
+                <div className="stat-card text-center">
+                  <p className="stat-value">{thumbnailAnalysis.averageEdgeDensity}%</p>
+                  <p className="stat-label">Visual Density</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[0.95fr_1.05fr] gap-4">
+                <div className="stat-card">
+                  <h3 className="section-header">Detected Style</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Composition Bias</p>
+                      <p className="text-sm text-foreground mt-1">{thumbnailAnalysis.compositionBias}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Dominant Colors</p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {thumbnailAnalysis.dominantColors.map((color) => (
+                          <div key={color} className="flex items-center gap-2 rounded-full border border-border/60 bg-background px-2 py-1 text-xs text-foreground">
+                            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                            {color}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Top Overlay Words</p>
+                      <TagCloud tags={thumbnailAnalysis.topOverlayWords} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <h3 className="section-header">Reference Thumbnails</h3>
+                  <div className="space-y-3">
+                    {thumbnailAnalysis.referenceVideos.map((video) => (
+                      <div key={video.id} className="flex items-center gap-3 rounded-lg bg-accent/30 p-3">
+                        {video.thumbnailUrl ? (
+                          <img src={video.thumbnailUrl} alt={video.title} className="w-16 h-16 rounded-md object-cover" />
+                        ) : (
+                          <div className="w-16 h-16 rounded-md bg-accent" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-foreground truncate">{video.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{formatNumber(video.views)} views</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="stat-card">
+              <p className="text-sm text-muted-foreground">Thumbnail analysis is unavailable for this competitor.</p>
+            </div>
+          )}
         </div>
       )}
 

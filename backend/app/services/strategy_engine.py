@@ -13,6 +13,7 @@ from colorthief import ColorThief
 from app.data.demo_creator import DEMO_CREATOR
 from app.services.gemini import GeminiClient
 from app.services.public_analysis import PublicCompetitorAnalysisService
+from app.services.thumbnail_analysis import ThumbnailAnalysisService
 
 DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 DEFAULT_PALETTES = {
@@ -23,9 +24,65 @@ DEFAULT_PALETTES = {
     "AI & Machine Learning": ["#7c3aed", "#0f172a", "#ef4444"],
 }
 
+CANONICAL_TERMS = {
+    "ai": "AI",
+    "api": "API",
+    "cli": "CLI",
+    "copilot": "Copilot",
+    "docker": "Docker",
+    "github": "GitHub",
+    "gpt": "GPT",
+    "ide": "IDE",
+    "ios": "iOS",
+    "linux": "Linux",
+    "llm": "LLM",
+    "macos": "macOS",
+    "nixos": "NixOS",
+    "openai": "OpenAI",
+    "vscode": "VS Code",
+    "vs": "vs",
+    "windows": "Windows",
+    "youtube": "YouTube",
+}
+
 
 def normalize_text(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+
+def smart_case_text(value: str) -> str:
+    tokens = re.split(r"(\s+|[—:,.!?()/-])", value.strip())
+    normalized = []
+    capitalize_next = True
+
+    for token in tokens:
+        lowered = token.lower()
+        if not token or token.isspace():
+            normalized.append(token)
+            continue
+        if re.fullmatch(r"[—:,.!?()/-]", token):
+            normalized.append(token)
+            capitalize_next = token in {":", "—", ".", "!", "?"}
+            continue
+        if token in {"I", "I'm", "I've", "I'd"}:
+            normalized.append(token)
+            capitalize_next = False
+            continue
+        if lowered in CANONICAL_TERMS:
+            normalized.append(CANONICAL_TERMS[lowered])
+            capitalize_next = False
+            continue
+        if any(character.isupper() for character in token[1:]):
+            normalized.append(token)
+            capitalize_next = False
+            continue
+        if capitalize_next:
+            normalized.append(token.capitalize())
+        else:
+            normalized.append(token.lower())
+        capitalize_next = False
+
+    return "".join(normalized).strip()
 
 
 def quantize_color(rgb: tuple[int, int, int]) -> str:
@@ -46,6 +103,7 @@ class StrategyEngineService:
         except Exception:
             self.gemini = None
         self._thumbnail_palette_cache: dict[str, list[str]] = {}
+        self.thumbnail_analysis = ThumbnailAnalysisService()
 
     def _creator(self, channel_id: str) -> dict:
         if channel_id != DEMO_CREATOR["channel_id"]:
@@ -279,33 +337,25 @@ class StrategyEngineService:
         return colors
 
     async def _modal_thumbnail_style(self, niche: str, references: list[dict]) -> dict:
-        color_counts = Counter()
-        for reference in references[:4]:
-            for color in await self._palette_for_thumbnail(reference.get("thumbnailUrl", "")):
-                color_counts[color] += 1
-
+        analysis = await self.thumbnail_analysis.analyze_video_set(references[:5])
         formula_rows = [self._title_formula(reference["title"]) for reference in references]
         formula_counts = Counter(formula_rows)
-        dominant_colors = [color for color, _ in color_counts.most_common(3)]
-        if not dominant_colors:
-            dominant_colors = DEFAULT_PALETTES.get(niche, ["#ef4444", "#0f172a", "#f8fafc"])
-
         primary_formula = formula_counts.most_common(1)[0][0] if formula_counts else "Direct promise"
-        if primary_formula == "Comparison":
-            composition = "Split-screen comparison"
-            face = "Usually no face; product or UI first"
-        elif primary_formula == "Personal story":
-            composition = "Face-led framing with one proof visual"
-            face = "Face-forward reaction"
-        else:
-            composition = "Single subject with bold focal point"
-            face = "Mixed; use a face only when the story is personal"
+
+        dominant_colors = analysis.get("dominantColors") or DEFAULT_PALETTES.get(niche, ["#ef4444", "#0f172a", "#f8fafc"])
+        face_presence_pct = analysis.get("facePresencePct", 0)
+        face_bias = "Face-forward reaction" if face_presence_pct >= 55 else "Usually no face; product or UI first"
 
         return {
             "dominantColors": dominant_colors,
             "primaryFormula": primary_formula,
-            "compositionBias": composition,
-            "faceBias": face,
+            "compositionBias": analysis.get("compositionBias", "Single subject with bold focal point"),
+            "faceBias": face_bias,
+            "facePresencePct": face_presence_pct,
+            "avgWordCount": analysis.get("avgWordCount", 0),
+            "topOverlayWords": analysis.get("topOverlayWords", []),
+            "averageBrightness": analysis.get("averageBrightness", 0),
+            "averageEdgeDensity": analysis.get("averageEdgeDensity", 0),
         }
 
     def _fallback_strategy_copy(self, report_input: dict) -> dict:
@@ -530,15 +580,50 @@ class StrategyEngineService:
         return {"ideas": normalized}
 
     def _fallback_title_variants(self, title: str, formulas: list[dict], examples: list[str]) -> dict:
-        subject = re.sub(r"\s+", " ", title.strip(" -"))
+        normalized_title = smart_case_text(re.sub(r"\s+", " ", title.strip(" -")))
         top_formula = formulas[0]["formula"] if formulas else "Personal story"
-        variants = [
-            {"title": f"5 {subject} Lessons That Changed My Workflow", "formula": "Numbered list", "reach": 82},
-            {"title": f"Why {subject} Is Suddenly Worth Your Time", "formula": "Question / curiosity", "reach": 84},
-            {"title": f"I Tried {subject} for 30 Days — Here's What Happened", "formula": "Personal story", "reach": 90},
-            {"title": f"{subject} vs the Old Way — What Actually Wins?", "formula": "Comparison", "reach": 86},
-            {"title": f"{subject}: The Practical Guide for Power Users", "formula": "Guide / review", "reach": 80},
-        ]
+        switch_match = re.match(r"^i switched to (?P<topic>.+?) for (?P<time>.+)$", title.strip(), flags=re.IGNORECASE)
+        tried_match = re.match(r"^i tried (?P<topic>.+?) for (?P<time>.+)$", title.strip(), flags=re.IGNORECASE)
+        left_match = re.match(r"^why i left (?P<topic>.+)$", title.strip(), flags=re.IGNORECASE)
+
+        if switch_match:
+            topic = smart_case_text(switch_match.group("topic"))
+            time_frame = smart_case_text(switch_match.group("time"))
+            variants = [
+                {"title": f"5 Things {topic} Got Right After {time_frame}", "formula": "Numbered list", "reach": 84},
+                {"title": f"Is {topic} Actually Better After {time_frame}?", "formula": "Question / curiosity", "reach": 86},
+                {"title": f"I Switched to {topic} for {time_frame} — Here's What Changed", "formula": "Personal story", "reach": 92},
+                {"title": f"{topic} After {time_frame}: What It Does Better Than My Old Setup", "formula": "Comparison", "reach": 88},
+                {"title": f"Switching to {topic}: The Practical Setup Guide", "formula": "Guide / review", "reach": 81},
+            ]
+        elif tried_match:
+            topic = smart_case_text(tried_match.group("topic"))
+            time_frame = smart_case_text(tried_match.group("time"))
+            variants = [
+                {"title": f"5 Surprises I Found Using {topic} for {time_frame}", "formula": "Numbered list", "reach": 83},
+                {"title": f"Was {topic} Worth It After {time_frame}?", "formula": "Question / curiosity", "reach": 85},
+                {"title": f"I Tried {topic} for {time_frame} — Here's What Happened", "formula": "Personal story", "reach": 90},
+                {"title": f"{topic} After {time_frame}: The Honest Tradeoff", "formula": "Comparison", "reach": 86},
+                {"title": f"{topic}: The Practical Guide After {time_frame}", "formula": "Guide / review", "reach": 79},
+            ]
+        elif left_match:
+            topic = smart_case_text(left_match.group("topic"))
+            variants = [
+                {"title": f"5 Reasons I Finally Left {topic}", "formula": "Numbered list", "reach": 83},
+                {"title": f"Was Leaving {topic} the Right Move?", "formula": "Question / curiosity", "reach": 85},
+                {"title": f"Why I Left {topic} — And What I Use Instead", "formula": "Personal story", "reach": 91},
+                {"title": f"{topic} vs My New Setup — What Actually Improved", "formula": "Comparison", "reach": 87},
+                {"title": f"Leaving {topic}: The Practical Migration Guide", "formula": "Guide / review", "reach": 80},
+            ]
+        else:
+            subject = normalized_title
+            variants = [
+                {"title": f"5 Lessons From {subject}", "formula": "Numbered list", "reach": 82},
+                {"title": f"Is {subject} Actually Worth Your Time?", "formula": "Question / curiosity", "reach": 84},
+                {"title": f"{subject} — Here's What Changed for Me", "formula": "Personal story", "reach": 88},
+                {"title": f"{subject} vs the Old Way — What Actually Wins?", "formula": "Comparison", "reach": 86},
+                {"title": f"{subject}: The Practical Guide for Power Users", "formula": "Guide / review", "reach": 80},
+            ]
         for variant in variants:
             variant["chars"] = len(variant["title"])
             variant["words"] = len(variant["title"].split())
@@ -607,14 +692,25 @@ class StrategyEngineService:
     def _fallback_thumbnail_concepts(self, title: str, niche: str, modal_style: dict, references: list[dict]) -> list[dict]:
         dominant_colors = ", ".join(modal_style["dominantColors"][:3])
         primary_formula = modal_style.get("primaryFormula", "Direct promise")
-        overlay_base = " ".join(word.upper() for word in title.split()[:3])[:26] or "WATCH THIS"
+        overlay_words = modal_style.get("topOverlayWords", [])
+        overlay_base = " ".join(overlay_words[:2]).upper() or " ".join(word.upper() for word in title.split()[:3])[:26] or "WATCH THIS"
         reference_note = references[0]["title"] if references else "top competitor thumbnails"
+        face_direction = (
+            "Face-forward reaction crop"
+            if modal_style.get("facePresencePct", 0) >= 55
+            else "No face; let the object, UI, or result visual do the work"
+        )
+        text_direction = (
+            f"{max(1, round(modal_style.get('avgWordCount', 2)))}-word overlay echoing the high-frequency thumbnail wording"
+            if modal_style.get("avgWordCount", 0) > 0
+            else "2-4 bold words"
+        )
 
         concepts = [
             {
                 "bg": f"Dark, high-contrast background using {dominant_colors}",
-                "face": "Face-forward if the video is a personal opinion or review",
-                "text": f"2-4 bold words: '{overlay_base}'",
+                "face": face_direction,
+                "text": f"{text_direction}: '{overlay_base}'",
                 "composition": modal_style.get("compositionBias", "Single subject with bold focal point"),
                 "rationale": f"Grounded in the dominant palette and packaging style around {reference_note}.",
             },
@@ -640,6 +736,7 @@ class StrategyEngineService:
         inferred_niche = niche.strip() or self._classify_creator_niche(title, creator)
         references = self._reference_videos(details, niche=inferred_niche, limit=5) or self._reference_videos(details, limit=5)
         modal_style = await self._modal_thumbnail_style(inferred_niche, references)
+        thumbnail_analysis = await self.thumbnail_analysis.analyze_video_set(references)
 
         concepts = self._fallback_thumbnail_concepts(title, inferred_niche, modal_style, references)
         if self.gemini is not None:
@@ -669,6 +766,6 @@ class StrategyEngineService:
         return {
             "niche": inferred_niche,
             "modalStyle": modal_style,
-            "referenceVideos": references[:4],
+            "referenceVideos": thumbnail_analysis.get("referenceVideos", references[:4]),
             "concepts": normalized,
         }
