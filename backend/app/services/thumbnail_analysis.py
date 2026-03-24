@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import re
+import logging
 from collections import Counter
 from io import BytesIO
 
 import httpx
 from colorthief import ColorThief
 from PIL import Image, ImageFilter, ImageStat
+
+from app.services.analysis_cache import analysis_cache
+
+logger = logging.getLogger(__name__)
 
 try:
     import mediapipe as mp
@@ -96,13 +101,23 @@ class ThumbnailAnalysisService:
     async def analyze_thumbnail(self, url: str) -> dict:
         if not url:
             return {}
+
+        # 1. Check in-memory cache
         if url in self._feature_cache:
             return self._feature_cache[url]
+
+        # 2. Check persistent cache
+        cache_key = f"thumb-features:{url}"
+        cached = await analysis_cache.get(cache_key)
+        if cached:
+            self._feature_cache[url] = cached
+            return cached
 
         try:
             content = await self._download_image(url)
             image = self._open_image(content)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Failed to download or open image for %s: %s", url, exc)
             return {}
 
         features = {
@@ -114,7 +129,11 @@ class ThumbnailAnalysisService:
             "width": image.width,
             "height": image.height,
         }
+        
+        # 3. Store in caches
         self._feature_cache[url] = features
+        await analysis_cache.set(cache_key, features, ttl=86400 * 7)  # Cache for 1 week
+        
         return features
 
     def _composition_bias(self, face_presence_pct: int, avg_word_count: float, edge_density: float) -> str:

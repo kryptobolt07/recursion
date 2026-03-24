@@ -22,10 +22,10 @@ from app.services.public_analysis import PublicCompetitorAnalysisService
 from app.services.thumbnail_analysis import ThumbnailAnalysisService
 
 DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-MARKET_DATA_TTL_SECONDS = 900
-RESULT_TTL_SECONDS = 900
-TITLE_RESULT_TTL_SECONDS = 1800
-THUMBNAIL_RESULT_TTL_SECONDS = 1800
+MARKET_DATA_TTL_SECONDS = 3600
+RESULT_TTL_SECONDS = 3600
+TITLE_RESULT_TTL_SECONDS = 86400
+THUMBNAIL_RESULT_TTL_SECONDS = 86400
 logger = logging.getLogger(__name__)
 DEFAULT_PALETTES = {
     "Linux & OS": ["#ef4444", "#0f172a", "#f8fafc"],
@@ -221,7 +221,7 @@ class StrategyEngineService:
 
     async def _persistent_set(self, key: str, value: Any, ttl_seconds: int) -> Any:
         self._cache_set(key, value, ttl_seconds)
-        await analysis_cache.set(key, value)
+        await analysis_cache.set(key, value, ttl=ttl_seconds)
         return value
 
     async def _call_llm(self, method_name: str, fallback: Any, **kwargs: Any) -> Any:
