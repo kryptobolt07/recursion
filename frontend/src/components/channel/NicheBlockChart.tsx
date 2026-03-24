@@ -5,11 +5,13 @@ export default function NicheBlockChart() {
   const navigate = useNavigate();
 
   const nicheColorClasses: Record<number, string> = {
-    1: "from-red-600 to-red-700",
-    2: "from-blue-600 to-blue-700",
-    3: "from-green-600 to-green-700",
-    4: "from-amber-600 to-amber-700",
-    5: "from-purple-600 to-purple-700",
+    1: "bg-niche-1",
+    2: "bg-niche-2",
+    3: "bg-niche-3",
+    4: "bg-niche-4",
+    5: "bg-niche-5",
+    6: "bg-niche-6",
+    7: "bg-niche-7",
   };
 
   return (
@@ -20,17 +22,31 @@ export default function NicheBlockChart() {
           <div
             key={niche.id}
             onClick={() => navigate(`/app/niche/${niche.id}`)}
-            className={`niche-block bg-gradient-to-b ${nicheColorClasses[niche.colorIndex] || "from-gray-600 to-gray-700"} flex flex-col justify-between relative overflow-hidden`}
-            style={{ flex: niche.uploadShare }}
+            className={`niche-block ${nicheColorClasses[niche.colorIndex] || "bg-muted"} flex flex-col justify-between relative overflow-hidden group min-w-[70px] shadow-inner`}
+            style={{ flex: Math.max(niche.uploadShare, 12) }}
           >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-            <div className="relative z-10">
-              <p className="text-sm font-bold text-primary-foreground">{niche.name}</p>
-              <p className="text-xs text-primary-foreground/80">{niche.uploadShare}% of uploads</p>
+            {/* Matte finish overlays */}
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
+            
+            <div className="relative z-10 flex flex-col gap-0.5">
+              <p className="text-xs sm:text-sm font-bold text-white leading-tight line-clamp-3 md:line-clamp-2 break-words drop-shadow-sm" title={niche.name}>
+                {niche.name}
+              </p>
+              <p className="text-[10px] sm:text-xs text-white/80 mt-0.5 opacity-90 truncate">
+                <span className="hidden sm:inline">{niche.uploadShare}% of uploads</span>
+                <span className="sm:hidden">{niche.uploadShare}%</span>
+              </p>
             </div>
-            <div className="relative z-10">
-              <p className="text-lg font-bold text-primary-foreground">{formatNumber(niche.avgViews)}</p>
-              <p className="text-[10px] text-primary-foreground/70">avg views</p>
+            
+            <div className="relative z-10 mt-auto pt-2">
+              <p className="text-sm sm:text-lg font-bold text-white truncate tracking-tight drop-shadow-sm">
+                {formatNumber(niche.avgViews)}
+              </p>
+              <p className="text-[9px] sm:text-[10px] text-white/70 truncate leading-none">
+                <span className="hidden sm:inline">avg views</span>
+                <span className="sm:hidden">views</span>
+              </p>
             </div>
           </div>
         ))}

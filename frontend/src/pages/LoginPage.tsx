@@ -56,7 +56,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="landing-shell landing-body relative min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="landing-shell landing-body relative min-h-screen overflow-hidden bg-[#090909] text-white">
       <div className="landing-grid pointer-events-none absolute inset-0" />
       <div className="landing-grain pointer-events-none absolute inset-0 opacity-70" />
       <div className="pointer-events-none absolute left-[-8%] top-[-10%] h-[32rem] w-[32rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(201,67,43,0.26),transparent_62%)] blur-3xl" />
